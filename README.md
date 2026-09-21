@@ -182,29 +182,28 @@ Pick what matches the work:
 
 ## Usage modes
 
-antislop is used one of two ways:
+antislop is used one of two ways, chosen at the start of each session by default:
 
 - **During** guides the work while it is built, ending with the Delivery Gate. Use it when building new UI.
 - **After** audits finished work: a numbered findings list, you approve which to fix, then a follow-up report. Use it to clean up existing output.
 
-Save your preferred mode once to skip the question in new sessions:
+Saving a preference is opt-in. With no settings file, antislop keeps asking in every new session exactly as it does today. Save your preferred mode once to skip that question:
 
 ```bash
 npx antislop-ai --mode during
 ```
 
-Use `after` instead for audits, `ask` to restore the question, or `--mode` alone to view the setting. This stores `{"mode":"during"}` in `~/.config/antislop/settings.json`, shared across agents and projects. You can also ask your agent to "remember during as my global antislop mode".
+Use `after` instead for audits, `ask` to restore the question in every session, or `--mode` alone to view the setting. The shared settings file is `~/.config/antislop/settings.json` on Linux and macOS, and `%APPDATA%\antislop\settings.json` on Windows (falling back to `~/.config` when `%APPDATA%` is unset). You can also ask your agent to "remember during as my global antislop mode".
 
-On activation, the skill announces **"antislop active: during (global preference)."** An explicit mode request in chat overrides the saved setting for that session. With no saved preference, it asks as before. Update existing skill installations and project pointers to use this behavior; older copies still contain the unconditional question. For installer-managed project pointers, rerun the installer in each project. Plugin users should update their plugin.
+When a saved preference is active, the skill announces **"antislop active: during (global preference)."** An explicit mode request in chat overrides the saved setting for that session. With no saved `during` or `after` preference, it asks as before. Update existing skill installations and project pointers to use this behavior; older copies still contain the unconditional question. For installer-managed project pointers, rerun the installer in each project. Plugin users should update their plugin.
 
 ## Roadmap
 
-**v3.2.11** is the current release.
+**v3.2.13** is the current release.
 
-- **A global Codex install moves to the folder Codex documents.** It wrote `~/.codex/skills`, which Codex's own source calls its deprecated user location, and now writes `$HOME/.agents/skills`. The old path still loads, so an existing install keeps working.
-- **Codex learns about the shared-folder collision.** Codex walks `.agents/skills` up from the working directory, so installing Codex and Copilot into one project leaves two copies of the same skill names. The installer now names that, where it used to stay silent.
-- **The shared-folder claim is corrected.** This page said Copilot was the one agent that reads the home-level `.agents/skills/`. Codex reads it at user scope and OpenCode lists it beside its own global folder, so it is three agents, and README, GUIDE and ROADMAP now say which agents do.
-- **A star history chart** sits between the FAQ and the contributors.
+- **Usage-mode preferences are opt-in.** With no settings file, antislop asks during or after in every session as before. Save `during` or `after` to skip the question, or save `ask` to restore it.
+- **A saved mode announces itself.** The first antislop activation says which mode is active and whether it came from the global preference or a session override.
+- **Settings follow the platform.** Linux and macOS use `~/.config/antislop/settings.json`; Windows uses `%APPDATA%\antislop\settings.json`, with a `~/.config` fallback when `%APPDATA%` is unset.
 
 Every earlier release, and what comes next, is in [ROADMAP.md](ROADMAP.md).
 

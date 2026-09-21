@@ -194,7 +194,7 @@ If you pasted the contents instead of giving the file, say: "Follow the install 
 
 **3. Answer the wizard's questions.**
 
-It confirms which skills you want and resolves when antislop should apply: while the AI is working (during), or after the work is done, to check it (after). Save a default with `npx antislop-ai --mode during` (or `after`) to skip that question in new sessions. The setting lives in `~/.config/antislop/settings.json` and applies across agents and projects. Use `--mode ask` to restore the question or `--mode` alone to view it. The skill announces the active mode and its source when it loads; a mode requested in chat overrides the default for that session.
+It confirms which skills you want and asks when antislop should apply: while the AI is working (during), or after the work is done, to check it (after). This remains the default in every new session when no preference has been saved. To opt out of the repeated question, save a default with `npx antislop-ai --mode during` (or `after`). The shared setting lives in `~/.config/antislop/settings.json` on Linux and macOS, and `%APPDATA%\antislop\settings.json` on Windows, falling back to `~/.config` if `%APPDATA%` is unset. Use `--mode ask` to restore the question in every session or `--mode` alone to view the setting. The skill announces a saved mode and its source when it loads; a mode requested in chat overrides the default for that session.
 
 ---
 

@@ -2,8 +2,15 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-export const settingsPath = path.join(os.homedir(), '.config', 'antislop', 'settings.json')
 const modes = ['during', 'after', 'ask']
+
+export function resolveSettingsPath({ platform = process.platform, env = process.env, home = os.homedir() } = {}) {
+  const paths = platform === 'win32' ? path.win32 : path
+  const base = platform === 'win32' && env.APPDATA ? env.APPDATA : paths.join(home, '.config')
+  return paths.join(base, 'antislop', 'settings.json')
+}
+
+export const settingsPath = resolveSettingsPath()
 
 export function readSettings(file = settingsPath) {
   let settings

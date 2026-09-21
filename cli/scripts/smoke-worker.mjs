@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import assert from 'node:assert/strict'
-import { configureMode, readSettings } from '../lib/settings.mjs'
+import { configureMode, readSettings, resolveSettingsPath } from '../lib/settings.mjs'
 import {
   AGENTS,
   skillSourceDir,
@@ -15,6 +15,23 @@ import {
 } from '../lib/install.mjs'
 
 const skills = ['antislop', 'antislop-ui']
+
+assert.equal(
+  resolveSettingsPath({ platform: 'linux', env: {}, home: '/home/ada' }),
+  '/home/ada/.config/antislop/settings.json'
+)
+assert.equal(
+  resolveSettingsPath({ platform: 'darwin', env: {}, home: '/Users/ada' }),
+  '/Users/ada/.config/antislop/settings.json'
+)
+assert.equal(
+  resolveSettingsPath({ platform: 'win32', env: { APPDATA: 'C:\\Users\\Ada\\AppData\\Roaming' }, home: 'C:\\Users\\Ada' }),
+  'C:\\Users\\Ada\\AppData\\Roaming\\antislop\\settings.json'
+)
+assert.equal(
+  resolveSettingsPath({ platform: 'win32', env: {}, home: 'C:\\Users\\Ada' }),
+  'C:\\Users\\Ada\\.config\\antislop\\settings.json'
+)
 
 const settingsFile = path.join(process.cwd(), 'preferences', 'settings.json')
 assert.match(configureMode([], settingsFile), /ask \(default\)/)

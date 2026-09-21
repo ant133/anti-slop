@@ -41,7 +41,7 @@ async function main() {
     return
   }
   if (process.argv.includes('--version') || process.argv.includes('-v')) {
-    console.log('antislop 3.2.11')
+    console.log('antislop 3.2.13')
     return
   }
 
