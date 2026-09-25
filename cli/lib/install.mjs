@@ -7,19 +7,46 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const CORE = 'antislop'
 
+export const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version
+
+/** The release an existing install came from, or null when it predates the VERSION file.
+ * Nothing else on disk names it, so without this an update cannot tell the user what
+ * they already have.
+ */
+export function installedVersion(targetPath) {
+  const file = path.join(targetPath, CORE, 'VERSION')
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : null
+}
+
 // Every row carries the entry file it writes, so a new agent cannot be added
 // without one: `entry` is what `updatePointers` needs and nothing else supplies it.
+// `readsAlso` lists the other project folders the agent loads skills from besides its
+// own, so a duplicate can be named instead of discovered later as a missing skill.
 export const AGENTS = [
   { id: 'claude', label: 'Claude Code', dir: '.claude/skills', entry: 'CLAUDE.md' },
   // Antigravity reads a project's .agents/skills, but not the one under the home dir.
   { id: 'antigravity', label: 'Antigravity', dir: '.agents/skills', globalDir: '.gemini/config/skills', entry: 'AGENTS.md' },
-  { id: 'codex', label: 'Codex', dir: '.codex/skills', entry: 'AGENTS.md' },
+  // Codex reads $HOME/.agents/skills at user scope and calls its own $CODEX_HOME/skills
+  // the deprecated user location, so a global install belongs in the shared folder. In a
+  // project it reads .codex/skills and walks .agents/skills up from the working directory.
+  { id: 'codex', label: 'Codex', dir: '.codex/skills', globalDir: '.agents/skills', readsAlso: ['.agents/skills'], entry: 'AGENTS.md' },
   // OpenCode documents ~/.config/opencode for global skills; ~/.opencode is undocumented.
-  { id: 'opencode', label: 'OpenCode', dir: '.opencode/skills', globalDir: '.config/opencode/skills', entry: 'AGENTS.md' },
+  { id: 'opencode', label: 'OpenCode', dir: '.opencode/skills', globalDir: '.config/opencode/skills', readsAlso: ['.claude/skills', '.agents/skills'], entry: 'AGENTS.md' },
   { id: 'cursor', label: 'Cursor', dir: '.cursor/skills', entry: 'AGENTS.md' },
+  // Cline reads .claude/skills as well as its own folder, so the two collide in one
+  // project. A global skill outranks a project one here, the reverse of every other row.
+  { id: 'cline', label: 'Cline', dir: '.cline/skills', readsAlso: ['.claude/skills'], entry: 'AGENTS.md' },
+  // Amp shares the project's .agents/skills but keeps a global folder of its own, and it
+  // also loads .claude/skills. Its user path outranks the project one.
+  { id: 'amp', label: 'Amp', dir: '.agents/skills', globalDir: '.config/agents/skills', readsAlso: ['.claude/skills'], entry: 'AGENTS.md' },
   { id: 'gemini', label: 'Gemini CLI', dir: '.gemini/skills', entry: 'GEMINI.md' },
   // Hermes reads a project's .hermes/skills and .agents/skills, project tier first.
-  { id: 'hermes', label: 'Hermes', dir: '.hermes/skills', entry: 'AGENTS.md' },
+  { id: 'hermes', label: 'Hermes', dir: '.hermes/skills', readsAlso: ['.agents/skills'], entry: 'AGENTS.md' },
+  // Copilot reads the shared .agents/skills folder, so it shares Antigravity's target.
+  { id: 'copilot', label: 'GitHub Copilot', dir: '.agents/skills', entry: 'AGENTS.md' },
+  // Kimi Code reads the shared folder at both scopes. Its own .kimi-code/skills is never
+  // written here, and $KIMI_CODE_HOME/skills moves with an env var the installer cannot see.
+  { id: 'kimi', label: 'Kimi Code', dir: '.agents/skills', entry: 'AGENTS.md' },
 ]
 
 export function skillSourceDir() {
@@ -40,17 +67,122 @@ function skillPath(agent, location) {
   return path.join(resolveBase(location), dir)
 }
 
+// Agents that share a folder share a target, so the skills are copied once and the
+// conflict count matches the folders on disk rather than the agents selected.
 export function resolveTargets(location, selected = AGENTS.map((a) => a.id)) {
-  return AGENTS.filter((a) => selected.includes(a.id)).map((agent) => {
+  const byPath = new Map()
+  for (const agent of AGENTS.filter((a) => selected.includes(a.id))) {
     const target = skillPath(agent, location)
-    return { agent, path: target, exists: fs.existsSync(target) }
-  })
+    const found = byPath.get(target)
+    if (found) found.agents.push(agent)
+    else byPath.set(target, { agents: [agent], path: target, exists: fs.existsSync(target) })
+  }
+  return [...byPath.values()]
+}
+
+// OpenCode, Hermes, Cline, and Amp read more than one project folder, so installing into
+// two of them puts the same names in both. None documents which copy wins, so name it.
+export function detectDuplicateReads({ targets, location }) {
+  if (location !== 'project') return []
+  const paths = new Set(targets.map((t) => t.path))
+  const found = []
+  for (const t of targets) {
+    for (const agent of t.agents) {
+      const others = (agent.readsAlso ?? [])
+        .map((d) => path.join(resolveBase(location), d))
+        .filter((p) => paths.has(p))
+      if (others.length > 0) found.push({ agent, paths: [t.path, ...others] })
+    }
+  }
+  return found
 }
 
 // Agents whose folder already exists, used to pre-check the picker. A missing
 // folder does not mean a missing agent, so the user can still add one.
 export function detectAgents(location) {
   return AGENTS.filter((a) => fs.existsSync(path.dirname(skillPath(a, location)))).map((a) => a.id)
+}
+
+// The plugin doors keep a copy of their own under a vendor path, and none of those paths
+// is documented as a stable interface. These probes only read, and a miss stays silent.
+function readJSON(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+function listDirs(dir) {
+  try {
+    return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
+  } catch {
+    return []
+  }
+}
+
+// A door that cloned the repo carries the VERSION file; one cloned before it shipped
+// does not, and an unknown version is reported as unknown rather than guessed.
+function cloneVersion(dir) {
+  try {
+    return fs.readFileSync(path.join(dir, 'skills', CORE, 'VERSION'), 'utf8').trim()
+  } catch {
+    return null
+  }
+}
+
+function findClone(dir) {
+  return fs.existsSync(dir) ? { path: dir, version: cloneVersion(dir) } : null
+}
+
+const claudePlugins = () => path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json')
+
+export const PLUGIN_DOORS = [
+  {
+    id: 'claude',
+    label: 'Claude Code',
+    update: 'claude plugin update antislop@anti-slop',
+    find() {
+      const entry = readJSON(claudePlugins())?.plugins?.['antislop@anti-slop']?.[0]
+      return entry ? { path: entry.installPath ?? claudePlugins(), version: entry.version ?? null } : null
+    },
+  },
+  {
+    id: 'antigravity',
+    label: 'Antigravity',
+    update: 'agy plugin install https://github.com/miqdadbadjuber/anti-slop',
+    find: () => findClone(path.join(os.homedir(), '.gemini', 'config', 'plugins', CORE)),
+  },
+  {
+    id: 'codex',
+    label: 'Codex',
+    update: 'codex plugin marketplace upgrade anti-slop',
+    find() {
+      const cache = path.join(os.homedir(), '.codex', 'plugins', 'cache', 'anti-slop', CORE)
+      const versions = listDirs(cache).sort()
+      return versions.length ? { path: cache, version: versions[versions.length - 1] } : null
+    },
+  },
+  {
+    id: 'cursor',
+    label: 'Cursor',
+    update: 'agent plugin marketplace update https://github.com/miqdadbadjuber/anti-slop',
+    find: () => findClone(path.join(os.homedir(), '.cursor', 'plugins', 'local', 'anti-slop')),
+  },
+]
+
+// A door that moves its files breaks its own probe and nothing else: the installer stops
+// naming that door instead of failing, which is the whole reason a miss has to be silent.
+export function detectPluginDoors() {
+  return PLUGIN_DOORS.flatMap((door) => {
+    let found = null
+    try {
+      found = door.find()
+    } catch {
+      found = null
+    }
+    return found ? [{ door, ...found }] : []
+  })
 }
 
 export function detectConflicts({ skills, targets }) {
@@ -90,7 +222,7 @@ export function installSkills({ skills, targets, overwrite = false }) {
       const dest = path.join(t.path, skill)
       if (fs.existsSync(dest) && !overwrite) continue
       copyDir(src, dest)
-      written.push({ skill, agent: t.agent, path: dest })
+      written.push({ skill, agents: t.agents.map((a) => a.id), path: dest })
     }
   }
   return written
@@ -108,6 +240,8 @@ const SKILL_LINES = {
   'antislop-code': 'Code comments: `antislop-code`',
 }
 
+export const SKILL_NAMES = Object.keys(SKILL_LINES)
+
 // Names the skills rather than importing the core: an `@` import pulls all 46 KB
 // of it into every session, including ones that touch no UI.
 function pointerBlock(skills) {
@@ -117,6 +251,7 @@ function pointerBlock(skills) {
     'For UI, copy, people, mobile layout, or code comments work, load the antislop skill for the task:',
     ...skills.filter((s) => SKILL_LINES[s]).map((s) => `- ${SKILL_LINES[s]}`),
     'Before starting, ask the user when antislop applies: during the work, or after it is done.',
+    'To update antislop later: `npx antislop-ai --update`, or run `npx antislop-ai` and pick Overwrite them.',
     POINTER_END,
   ]
 }
@@ -135,7 +270,7 @@ function scanMarkers(lines) {
         mark = m[1][0]
         len = m[1].length
         from = i
-      } else if (m[1][0] === mark && m[1].length >= len) {
+      } else if (m[1][0] === mark && m[1].length >= len && /^[ \t]*$/.test(line.slice(m[0].length))) {
         mark = null
         from = -1
       }
@@ -194,7 +329,7 @@ function writeBlock(entry, block) {
 export function updatePointers({ targets, skills }) {
   const entries = new Set()
   for (const t of targets) {
-    if (fs.existsSync(path.join(t.path, CORE))) entries.add(t.agent.entry)
+    if (fs.existsSync(path.join(t.path, CORE))) for (const a of t.agents) entries.add(a.entry)
   }
 
   const block = pointerBlock(skills)
@@ -205,4 +340,34 @@ export function updatePointers({ targets, skills }) {
     written.push(entry)
   }
   return written
+}
+
+// `--update` replaces every antislop folder already on this machine, at both scopes and
+// with no prompts. Each folder keeps the skill selection it was installed with. The scope
+// list is a parameter so a test never writes into the home directory it runs under.
+export function updateAll({ locations = ['project', 'global'] } = {}) {
+  const results = []
+  const projectTargets = []
+  const projectSkills = new Set()
+
+  for (const location of locations) {
+    for (const target of resolveTargets(location)) {
+      if (!fs.existsSync(path.join(target.path, CORE))) continue
+      const skills = SKILL_NAMES.filter((s) => fs.existsSync(path.join(target.path, s)))
+      if (skills.length === 0) continue
+      const from = installedVersion(target.path)
+      installSkills({ skills, targets: [target], overwrite: true })
+      results.push({ location, path: target.path, agents: target.agents.map((a) => a.id), skills, from, to: VERSION })
+      if (location === 'project') {
+        projectTargets.push(target)
+        for (const s of skills) projectSkills.add(s)
+      }
+    }
+  }
+
+  // One block per entry file, so the union of every project folder's skills is the list.
+  const pointers = projectTargets.length > 0
+    ? updatePointers({ targets: projectTargets, skills: [...projectSkills] })
+    : []
+  return { results, pointers }
 }

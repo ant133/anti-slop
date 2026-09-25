@@ -27,8 +27,8 @@ Or from inside an active Oh My Pi session:
   - `antislop-human`: Accessibility and contrast rules.
   - `antislop-layoutmobile`: Responsive layout and mobile viewport rules.
   - `antislop-code`: Code comments rules.
-- **MCP server**:
-  - `antislop-contrast`: Computes WCAG contrast ratios and pass/fail verdicts via JSON-RPC.
+
+Contrast checks use `contrast-check.py` bundled with `antislop-human`. The skill also includes a formula and reference table as fallbacks. This integration does not register an MCP server.
 
 ## Scope
 

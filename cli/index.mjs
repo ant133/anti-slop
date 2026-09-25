@@ -10,8 +10,13 @@ import {
   resolveTargets,
   detectAgents,
   detectConflicts,
+  detectDuplicateReads,
+  detectPluginDoors,
   installSkills,
+  installedVersion,
+  updateAll,
   updatePointers,
+  VERSION,
 } from './lib/install.mjs'
 
 const EXTRA_SKILLS = [
@@ -33,9 +38,42 @@ function displayDir(agent, location) {
   return location === 'global' ? `~/${agent.globalDir ?? agent.dir}` : agent.dir
 }
 
+// A plugin door keeps its own copy, so --update cannot reach it. Name the command for
+// the ones found rather than send the reader back to a table in the guide.
+function printPluginDoors(found) {
+  if (found.length === 0) return
+  console.log('\nInstalled as a plugin (these keep their own copy, so updating them is separate):')
+  for (const p of found) {
+    console.log(`  ${p.door.label}${p.version ? ` ${p.version}` : ''}`)
+    console.log(`    ${p.door.update}`)
+  }
+}
+
 async function main() {
   if (process.argv.includes('--version') || process.argv.includes('-v')) {
-    console.log('antislop 3.2.9')
+    console.log(`antislop ${VERSION}`)
+    return
+  }
+
+  // --update is the non-interactive path, so it runs before the terminal guard and prints
+  // plain lines: an update is something a script or a user in a hurry can run unattended.
+  if (process.argv.includes('--update')) {
+    const { results, pointers } = updateAll()
+    if (results.length === 0) {
+      console.log(`antislop ${VERSION}: no installed folders found. Nothing to update.`)
+    } else {
+      for (const r of results) {
+        const from = r.from ? `antislop ${r.from}` : 'an older release that records no version'
+        console.log(`${r.path}`)
+        console.log(`  ${from} -> antislop ${VERSION}  (${r.skills.length} skill(s) for ${r.agents.join(', ')})`)
+      }
+      console.log(`\nUpdated ${results.length} folder(s) to antislop ${VERSION}.`)
+      if (pointers.length > 0) {
+        console.log(`Pointer refreshed in ${pointers.map((p) => path.basename(p)).join(', ')}.`)
+      }
+      console.log('Start a new agent session for the new rules to load.')
+    }
+    printPluginDoors(detectPluginDoors())
     return
   }
 
@@ -97,11 +135,17 @@ async function main() {
   const conflicts = detectConflicts({ skills, targets })
   let overwrite = false
   if (conflicts.length > 0) {
+    // Overwriting is how an update happens, and the version on disk is the one fact
+    // the user cannot look up anywhere. Name both sides so the choice is obvious.
+    const found = [...new Set(targets.map((t) => installedVersion(t.path)).filter(Boolean))]
+    const have = found.length > 0 ? `antislop ${found.join(' and ')}` : 'an antislop old enough that it records no version'
+    log.warn(`Already here: ${have}. This installer carries ${VERSION}.`)
+
     const answer = await select({
       message: `${conflicts.length} skill folder(s) already exist. What should I do?`,
       options: [
-        { value: 'overwrite', label: 'Overwrite them', hint: 'replace with this version' },
-        { value: 'keep', label: 'Keep what is there', hint: 'leave the old version in place' },
+        { value: 'overwrite', label: 'Overwrite them', hint: `update to ${VERSION}` },
+        { value: 'keep', label: 'Keep what is there', hint: 'stay on what is installed' },
       ],
     })
     if (isCancel(answer)) stop('Install cancelled.')
@@ -124,7 +168,7 @@ async function main() {
     log.step('Pointer written to ' + pointers.map((p) => path.basename(p)).join(', '))
   }
 
-  const agentCount = new Set(written.map((w) => w.agent.id)).size
+  const agentCount = new Set(written.flatMap((w) => w.agents)).size
   if (written.length > 0) {
     outro(`Installed ${written.length} skill(s) into ${agentCount} agent folder(s).`)
     console.log(pc.dim('antislop is ready. The next agent session loads it.'))
@@ -137,9 +181,22 @@ async function main() {
 
   // Hermes gates project skills behind a one-time, per-repo trust step, so name it here
   // rather than let the user meet it as a banner after the install looked finished.
-  if (location === 'project' && targets.some((t) => t.agent.id === 'hermes')) {
+  if (location === 'project' && targets.some((t) => t.agents.some((a) => a.id === 'hermes'))) {
     log.warn('Hermes needs one more step: run `hermes skills trust` in this project.')
   }
+
+  // Two folders holding the same skill names is how a skill goes missing in OpenCode,
+  // which reads both and does not document which copy it keeps.
+  for (const dup of detectDuplicateReads({ targets, location })) {
+    log.warn(
+      `${dup.agent.label} reads both ${dup.paths.join(' and ')}, and antislop is now in both. ` +
+        'It may load either copy. Remove one of them to be safe.'
+    )
+  }
+
+  // Installing through the installer does not update a plugin door the user also has,
+  // and nothing else would tell them that copy exists.
+  printPluginDoors(detectPluginDoors())
 }
 
 main().catch((err) => {

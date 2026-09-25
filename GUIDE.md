@@ -36,18 +36,18 @@ There are four routes in, and the difference between them matters more than it l
 
 | Route | What it does | Works on |
 |-------|--------------|----------|
-| **The installer** | Copies the skill folders into your project or your home folder | Seven agents, no setup beyond a terminal |
+| **The installer** | Copies the skill folders into your project or your home folder | Eleven agents, no setup beyond a terminal |
 | **The skills directory** | Copies the same folders using the skills.sh tool | The agents that directory supports |
-| **A plugin door** | Loads antislop straight from this repository, nothing copied | Claude Code, Antigravity, Codex, Cursor, Oh My Pi |
+| **A plugin door** | Loads antislop straight from this repository, nothing copied | Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, Oh My Pi |
 | **The single file** | One Markdown file you hand to any AI | Anything that reads text, including a phone |
 
 Pick one. They load the same rules, so adding a second only gives you a second thing to keep updated.
 
 ### Which route should I pick?
 
-- **The installer** if you want antislop in one project or everywhere, and you use any of the seven agents. It is the only route that covers OpenCode, Gemini CLI, and Hermes, and the only one that detects your agents for you.
+- **The installer** if you want antislop in one project or everywhere, and you use any of the eleven agents. It is the only route that covers OpenCode, Cline, Amp, Gemini CLI, Hermes, and GitHub Copilot, and the only one that detects your agents for you.
 - **The skills directory** if you already use that directory's tool and want the folders without the installer's questions. It writes no pointer, so antislop reloads by description alone.
-- **A plugin door** if you use Claude Code, Antigravity, Codex, Cursor, or Oh My Pi and would rather not keep a copy in your project. You get updates from the plugin's own update command instead of re-running an installer.
+- **A plugin door** if you use Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, or Oh My Pi and would rather not keep a copy in your project. You get updates from the plugin's own update command instead of re-running an installer.
 - **The single file** if you have no terminal, or you want antislop in a chat window or on a phone.
 
 ### Before you start
@@ -131,7 +131,7 @@ What it does not do is write the pointer that reloads antislop every session. If
 
 A plugin is a feature of the agent, not of antislop. You point the agent at this repository once, and from then on the agent loads antislop directly from there. Nothing is copied into your project, so there is no snapshot that can quietly go stale. A new version arrives by updating the plugin, not by re-running an installer.
 
-Two things to know before you pick one. A plugin fits exactly one agent, so this route exists for five agents and not for the other two. And every agent below keeps its own local copy, so none of them updates by itself unless that agent says it does.
+Two things to know before you pick one. A plugin fits exactly one agent, so use the door for your agent from the list below. And every agent below keeps its own local copy, so none of them updates by itself unless that agent says it does.
 
 #### Claude Code
 
@@ -167,6 +167,27 @@ agent plugin marketplace add https://github.com/miqdadbadjuber/anti-slop
 
 Then, inside Cursor, open **Customize** in the sidebar, find **antislop**, and select **Install**, choosing project or user scope. From the dashboard, **Dashboard → Plugins → Add Marketplace → Import from Repo** does the same.
 
+#### Kimi Code
+
+In a Kimi Code session:
+
+```text
+/plugins install https://github.com/miqdadbadjuber/anti-slop
+```
+
+The URL resolves to the latest release. Plugin changes do not reach the session you ran the command in, so run `/reload` or `/new` afterwards. Kimi Code installs plugins per user, and has no project scope for them, so one install covers every project. Its `systemPromptPath` loads the antislop pointer in every session, so there is nothing else to do.
+
+#### Cline
+
+Cline plugins install from the CLI:
+
+```bash
+cline plugin install https://github.com/miqdadbadjuber/anti-slop.git
+```
+
+The plugin registers no tools and no hooks. Its whole payload is the `skills/` folder it bundles, which Cline discovers when the plugin is installed, so there is no pointer to write and nothing is copied into your project.
+
+**Read this before you pick it.** Cline's own documentation limits plugins to the SDK, the CLI, and Kanban, and states that the feature does not apply to the VS Code and JetBrains extensions. So this door is for a Cline CLI install. If you run Cline inside an editor, use the installer instead: it writes the same skills into `.cline/skills/`, which both the CLI and the extensions read.
 
 #### Oh My Pi
 
@@ -183,6 +204,7 @@ Or from inside an active Oh My Pi session:
 /marketplace add oggiesutrisna/omp-anti-slop-integration
 /marketplace install antislop@anti-slop
 ```
+
 ---
 
 ### The single file
@@ -228,7 +250,23 @@ The installer, the skills directory, and the plugin doors all need a terminal, s
 
 ## Update
 
-Nothing here is automatic unless a route below says it is. Every route updates by running that route's own command again, or by replacing the copy you made.
+Nothing here is automatic unless a route below says it is. Every route updates by running that route's own command again, or by replacing the copy you made. If you installed through the installer or the skills directory, you can skip straight to **One command, both file routes** below; the rest of this section is for the plugin doors and the single file. Whichever route you use, your agent loads skills when a session starts, so close the session you are in and open a new one afterwards. Until you do, the old rules are still the ones loaded.
+
+**First, how do you know a new version is out?** Nothing notifies you. Two places always carry the current one: the [releases page](https://github.com/miqdadbadjuber/anti-slop/releases) and the version badge at the top of the [README](README.md).
+
+**And which one do you have?** The installed `antislop` folder holds a `VERSION` file naming the release it came from. Open it, or ask your agent "which antislop version is installed?" and it reads the file for you. A folder with no `VERSION` file predates that file, so it is old enough to update without checking anything else. The installer route can skip this entirely: it prints both versions itself.
+
+### One command, both file routes
+
+The installer and the skills directory write the same files into the same folders, and nothing on disk records which one you used, so there is one command that covers both:
+
+```bash
+npx antislop-ai --update
+```
+
+It looks in the current project and in your home directory, replaces every antislop folder it finds, keeps the skill selection each folder was installed with, and prints the release it replaced next to the one it wrote. It asks nothing, so it is also the one to use in a script.
+
+It cannot reach a plugin install. A plugin keeps its own copy under the agent that installed it, which is why the same command also reads the plugin stores it can find and prints the update command for each door it sees. The plugin doors section below covers them one by one, and the two routes it does cover are the two below.
 
 ### The installer
 
@@ -238,7 +276,13 @@ The installer copies files, so your project holds a snapshot. When a new version
 npx antislop-ai
 ```
 
-Answer the questions exactly as you did the first time. Because the folders already exist, it now asks one extra question:
+Answer the questions exactly as you did the first time. When it reaches folders you already have, it prints what it found before asking anything:
+
+```
+▲ Already here: antislop 3.2.10. This installer carries 3.2.13.
+```
+
+Then it asks one extra question:
 
 - **Overwrite them** replaces your copies with the version it just downloaded. **This is the update.**
 - **Keep what is there** leaves your old files alone and installs nothing.
@@ -303,6 +347,25 @@ agent plugin marketplace update https://github.com/miqdadbadjuber/anti-slop
 
 In the dashboard you can also enable **Auto Refresh** for the marketplace, or press **Refresh** by hand. Cursor re-indexes a marketplace at most once every ten minutes. If new plugins were added to the repo, re-importing the repository URL is what picks them up.
 
+#### Kimi Code
+
+Kimi Code has no plugin update command, so run the same install command again:
+
+```text
+/plugins install https://github.com/miqdadbadjuber/anti-slop
+```
+
+`/plugins` then **Enter** on the antislop row in the **Installed** tab does the same. Either way, run `/reload` or `/new` after it.
+
+#### Cline
+
+Cline replaces an existing install only when you say so, so the update carries `--force`:
+
+```bash
+cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force
+```
+
+Without it, Cline keeps what is installed and tells you so.
 
 #### Oh My Pi
 
@@ -319,6 +382,7 @@ Or inside an active session:
 /marketplace update anti-slop
 /marketplace upgrade antislop@anti-slop
 ```
+
 ### The single file
 
 Download the file again and replace your copy. There is nothing else to update, since this route installs no folders.
@@ -370,6 +434,18 @@ Cursor documents no plugin uninstall command, so remove the plugin from the Cust
 agent plugin marketplace remove anti-slop
 ```
 
+#### Kimi Code
+
+```text
+/plugins remove antislop
+```
+
+It asks for confirmation. `/plugins disable antislop` switches it off without removing it. Removing only deletes the installation record, so the copy under `$KIMI_CODE_HOME/plugins/managed/antislop/` (default `~/.kimi-code/plugins/managed/antislop/`) stays on disk until you delete it.
+
+#### Cline
+
+Cline documents no plugin uninstall command, only `cline plugin install`, so delete the plugin's folder under `~/.cline/plugins/_installed/` instead. Nothing was copied into your project, so that is the whole removal.
+
 #### Oh My Pi
 
 ```bash
@@ -401,12 +477,22 @@ The installer writes into the folder your agent reads. This is what it writes an
 | Antigravity | `.agents/skills/` |
 | OpenCode | `.opencode/skills/` |
 | Cursor | `.cursor/skills/` |
+| Cline | `.cline/skills/` |
+| Amp | `.agents/skills/` |
 | Gemini CLI | `.gemini/skills/` |
 | Hermes | `.hermes/skills/` |
+| GitHub Copilot | `.agents/skills/` |
+| Kimi Code | `.agents/skills/` |
 
-A global install writes the same folder under your home directory, with two exceptions. OpenCode documents its global skills folder as `~/.config/opencode/skills/`, so the installer writes there rather than to `~/.opencode/skills/`, which OpenCode still reads but does not document. Antigravity reads a project's `.agents/skills/`, but under your home directory it reads `~/.gemini/config/skills/` and not `~/.agents/skills/`, so the installer writes there on a global install.
+A global install writes the same folder under your home directory, with four exceptions. OpenCode documents its global skills folder as `~/.config/opencode/skills/`, so the installer writes there rather than to `~/.opencode/skills/`, which OpenCode still reads but does not document. Antigravity reads a project's `.agents/skills/`, but under your home directory it reads `~/.gemini/config/skills/` and not `~/.agents/skills/`, so the installer writes there on a global install. Codex goes the other way: it marks its own `~/.codex/skills/` as the deprecated user location and documents `~/.agents/skills/` in its place, so a global Codex install writes the shared folder. Amp is the fourth. It documents `~/.config/agents/skills/` as its user-level folder, so a global install writes there and not to `~/.agents/skills/`, which Amp still reads at a lower rank. Copilot and Kimi Code read that same home-level folder, so a global install reaches them through the folder name a project install uses.
 
-On a project install the installer also writes the pointer that reloads antislop every session: into the project's `AGENTS.md` for Codex, Antigravity, OpenCode, Cursor, and Hermes, into `CLAUDE.md` for Claude Code, and into `GEMINI.md` for Gemini CLI. For OpenCode that is the whole mechanism: it loads the skill folders from `.opencode/skills/` and reads the pointer from `AGENTS.md`, which was verified against the opencode CLI.
+Antigravity, Copilot, Kimi Code, and Amp share `.agents/skills/`. Copilot also reads `.github/skills/` and `.claude/skills/`, and Kimi Code also reads `.kimi-code/skills/`, but there is no reason to write a second copy, so picking them together installs once. Cline is the exception to the pattern: its own folder is `.cline/skills/`, and it reads `.claude/skills/` beside it, so there is a real second copy to worry about and the note below covers it. Amp sits in both groups, because it shares the folder above and also reads `.claude/skills/`, and the same note covers it.
+
+**Five of these agents read more than one folder, and that is a problem.** OpenCode loads skills from `.opencode/skills/`, `.claude/skills/`, and `.agents/skills/`, and its documentation asks that skill names be unique across every location while never saying which copy wins if they are not. Codex walks `.agents/skills/` up from the working directory, Hermes reads both `.hermes/skills/` and `.agents/skills/`, and Cline and Amp each load `.claude/skills/` beside their own folder. So a collision takes two selections: OpenCode, Cline, or Amp beside Claude Code, or Codex, OpenCode, or Hermes beside any of Antigravity, Copilot, Kimi Code, or Amp, and the same skill names land in two folders that agent reads. The installer names that when it happens, and the fix is to remove the copy you do not need, usually the `.opencode/skills/` one, since OpenCode reads the other folder by its own documentation. Two of the five also resolve a collision that comes from scope rather than from two folders, and they resolve it the unusual way round: Cline and Amp both let a global skill outrank a project skill of the same name, so a stale global install silently wins over a fresh project one. Their own documentation is the source for that, and the other agents here do not settle it.
+
+On a project install the installer also writes the pointer that reloads antislop every session: into the project's `AGENTS.md` for Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Hermes, Copilot, and Kimi Code, into `CLAUDE.md` for Claude Code, and into `GEMINI.md` for Gemini CLI. For OpenCode that is the whole mechanism: it loads the skill folders from `.opencode/skills/` and reads the pointer from `AGENTS.md`, which was verified against the opencode CLI.
+
+**Claude Code reads `AGENTS.md` too, since v2.1.277.** antislop still writes `CLAUDE.md` for it, because the two are not equal: Claude reads `AGENTS.md` only when no `CLAUDE.md` or `CLAUDE.local.md` exists in the working directory or any directory above it. In a project that has one, an `AGENTS.md`-only pointer would be ignored without an error. The setting under **Project instructions** in `/config` can change that, and `AGENTS.md` is not read at all on Bedrock, Vertex, or Foundry.
 
 **Hermes needs one more step.** Hermes reads a project's `.hermes/skills/`, and a project's skills outrank your global ones, but it will not load skills out of a cloned repository until you say that repository is yours. After a project install, run this once in that project:
 
@@ -444,7 +530,7 @@ If your `DESIGN.md` happens to ask for something antislop counts as slop, it doe
 
 ## Where is this going?
 
-antislop is packaged three ways at once: standard skill folders, native plugins for Claude Code, Antigravity, Codex, Cursor, and Oh My Pi, and the single-file core that works anywhere. Agent support grows over time. For the current release and what comes next, see the [roadmap](ROADMAP.md). For the full picture of every skill, see the [README](README.md).
+antislop is packaged three ways at once: standard skill folders, native plugins for Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, and Oh My Pi, and the single-file core that works anywhere. Agent support grows over time. For the current release and what comes next, see the [roadmap](ROADMAP.md). For the full picture of every skill, see the [README](README.md).
 
 ## Feedback
 
