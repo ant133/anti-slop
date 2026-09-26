@@ -90,7 +90,10 @@ check('B pointers', pointers.map((p) => path.basename(p)), ['CLAUDE.md'])
 const pointer = fs.readFileSync(pointers[0], 'utf8')
 assert.match(pointer, /explicit session instruction first, then global preference, then ask/)
 assert.match(pointer, /A session instruction always wins/)
-assert.match(pointer, /Announce a saved preference or session override exactly once/)
+assert.ok(pointer.includes('antislop active: <mode> (session override).'))
+assert.ok(pointer.includes('antislop active: <mode> (global preference).'))
+assert.ok(pointer.includes('`.claude/skills/antislop/SKILL.md`'))
+assert.ok(pointer.includes('`.claude/skills/antislop-ui/SKILL.md`'))
 
 const conflicts = detectConflicts({ skills, targets })
 written = installSkills({ skills, targets, overwrite: false })
@@ -163,6 +166,17 @@ check('F global targets', globalTargets.map((t) => `${t.agents.map((a) => a.id).
 ])
 
 // Copies are identical and the pointer block dedupes.
+// A shared entry file must point to an installed copy, even with several agents.
+const sharedTargets = resolveTargets('project', ['codex', 'opencode'])
+installSkills({ skills, targets: sharedTargets, overwrite: false })
+updatePointers({ targets: sharedTargets, skills })
+const sharedPointer = fs.readFileSync('AGENTS.md', 'utf8')
+for (const skill of skills) {
+  const installedPath = `.codex/skills/${skill}/SKILL.md`
+  assert.ok(sharedPointer.includes(`\`${installedPath}\``))
+  assert.equal(fs.readFileSync(installedPath, 'utf8'), fs.readFileSync(path.join(skillSourceDir(), skill, 'SKILL.md'), 'utf8'))
+}
+
 const src = fs.readFileSync(path.join(skillSourceDir(), 'antislop-ui', 'SKILL.md'), 'utf8')
 const dst = fs.readFileSync(path.join(process.cwd(), '.claude', 'skills', 'antislop-ui', 'SKILL.md'), 'utf8')
 check('G antislop-ui SKILL.md identical', src === dst, true)

@@ -138,15 +138,16 @@ const SKILL_LINES = {
   'antislop-code': 'Code comments: `antislop-code`',
 }
 
-// Names the skills rather than importing the core: an `@` import pulls all 46 KB
-// of it into every session, including ones that touch no UI.
-function pointerBlock(skills) {
+// Explicit paths avoid resolving a same-named, older user-level skill. No `@`
+// import: the core should only be read when the task needs it.
+function pointerBlock(skills, skillDir) {
   return [
     POINTER_START,
     '## antislop',
-    'For UI, copy, people, mobile layout, or code comments work, load the antislop skill for the task:',
-    ...skills.filter((s) => SKILL_LINES[s]).map((s) => `- ${SKILL_LINES[s]}`),
-    'Before starting, follow the core\'s "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. Announce a saved preference or session override exactly once.',
+    'For UI, copy, people, mobile layout, or code comments work, read these installed skill files directly (use these paths even if a same-named global skill exists):',
+    ...skills.filter((s) => SKILL_LINES[s]).map((s) => `- ${SKILL_LINES[s]}: \`${skillDir}/${s}/SKILL.md\``),
+    'Before starting, follow the core\'s "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. For a resolved mode, say `antislop active: <mode> (session override).` or `antislop active: <mode> (global preference).` once before task work, using the actual mode and source. Acknowledging the user\'s request without naming the source does not replace this notice.',
+    'Only an explicit choice of antislop during or after selects a session mode. A request to review, audit, or avoid file edits does not select a mode; read the global preference in that case. Another skill\'s mode does not select antislop\'s mode.',
     POINTER_END,
   ]
 }
@@ -222,16 +223,19 @@ function writeBlock(entry, block) {
 }
 
 export function updatePointers({ targets, skills }) {
-  const entries = new Set()
+  const entries = new Map()
   for (const t of targets) {
-    if (fs.existsSync(path.join(t.path, CORE))) for (const a of t.agents) entries.add(a.entry)
+    if (fs.existsSync(path.join(t.path, CORE))) {
+      for (const a of t.agents) {
+        if (!entries.has(a.entry)) entries.set(a.entry, path.relative(process.cwd(), t.path).split(path.sep).join('/'))
+      }
+    }
   }
 
-  const block = pointerBlock(skills)
   const written = []
-  for (const name of entries) {
+  for (const [name, skillDir] of entries) {
     const entry = path.join(process.cwd(), name)
-    writeBlock(entry, block)
+    writeBlock(entry, pointerBlock(skills, skillDir))
     written.push(entry)
   }
   return written
