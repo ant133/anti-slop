@@ -146,7 +146,7 @@ function pointerBlock(skills) {
     '## antislop',
     'For UI, copy, people, mobile layout, or code comments work, load the antislop skill for the task:',
     ...skills.filter((s) => SKILL_LINES[s]).map((s) => `- ${SKILL_LINES[s]}`),
-    'Before starting, follow the core\'s "Two Usage Modes" section: read the global preference, resolve the mode, and announce it. Ask only when no mode is resolved.',
+    'Before starting, follow the core\'s "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. Announce a saved preference or session override exactly once.',
     POINTER_END,
   ]
 }

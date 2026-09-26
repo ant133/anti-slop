@@ -195,7 +195,7 @@ npx antislop-ai --mode during
 
 Use `after` instead for audits, `ask` to restore the question in every session, or `--mode` alone to view the setting. The shared settings file is `~/.config/antislop/settings.json` on Linux and macOS, and `%APPDATA%\antislop\settings.json` on Windows (falling back to `~/.config` when `%APPDATA%` is unset). You can also ask your agent to "remember during as my global antislop mode".
 
-When a saved preference is active, the skill announces **"antislop active: during (global preference)."** An explicit mode request in chat overrides the saved setting for that session. With no saved `during` or `after` preference, it asks as before. Update existing skill installations and project pointers to use this behavior; older copies still contain the unconditional question. For installer-managed project pointers, rerun the installer in each project. Plugin users should update their plugin.
+When a saved preference is active, the skill announces **"antislop active: during (global preference)."** Mode resolution follows a strict order: an explicit mode request in the current chat, then the saved preference, then the question. A session request always wins and does not change the saved setting. The skill announces a saved preference or session override exactly once. With no saved `during` or `after` preference, it asks as before. Update existing skill installations and project pointers to use this behavior; older copies still contain the unconditional question. For installer-managed project pointers, rerun the installer in each project. Plugin users should update their plugin.
 
 ## Roadmap
 
