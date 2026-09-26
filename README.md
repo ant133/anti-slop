@@ -80,7 +80,7 @@ One command, then answer the prompts. It asks which extra skills you want, where
 npx antislop-ai
 ```
 
-To update later, run the same command and choose **Overwrite them** when it finds the existing folders. Choosing **Keep what is there** installs nothing and leaves you on the old version.
+To update later, run the same command and choose **Overwrite them** when it finds the existing folders. See [Update](#update).
 
 ### 2. The skills directory
 
@@ -128,6 +128,54 @@ agent plugin marketplace add https://github.com/miqdadbadjuber/anti-slop
 
 Then open **Customize** in Cursor, find **antislop**, and select **Install**, choosing project or user scope.
 
+### 7. The plugin (Kimi Code)
+
+The same repo is a Kimi Code plugin. Install it in a Kimi Code session, then start a new one:
+
+```text
+/plugins install https://github.com/miqdadbadjuber/anti-slop
+```
+
+The URL resolves to the latest release. Kimi Code installs plugins per user, so this covers every project.
+
+### 8. The plugin (Cline)
+
+The same repo is a Cline plugin. Install it with the Cline CLI:
+
+```bash
+cline plugin install https://github.com/miqdadbadjuber/anti-slop.git
+```
+
+The plugin ships no tools and no hooks. Its whole payload is the `skills/` folder it bundles, which Cline discovers on install. This has to be said plainly: Cline's own documentation limits plugins to the SDK, the CLI, and Kanban, and says the feature does not apply to the VS Code and JetBrains extensions yet. So this door covers a Cline CLI install and not an editor install, and the installer in path 1 is the route for an editor.
+
+### 9. The package (Pi)
+
+The same repo is a Pi package. Pi reads a `pi` key in this repository's root `package.json`, which points at the `skills/` folder, so the install is one command:
+
+```bash
+pi install git:github.com/miqdadbadjuber/anti-slop
+```
+
+That writes the package declaration to `~/.pi/agent/settings.json`, which covers every project. Add `-l` to write it to this project's `.pi/settings.json` instead, where it applies to this repository only and loads after you grant project trust.
+
+### 10. The plugin (Oh My Pi)
+
+The same repo is an Oh My Pi plugin and marketplace. Oh My Pi reads the catalog this repository keeps at `.omp-plugin/marketplace.json`, so the only Oh My Pi file here is that catalog: the plugin's manifest is the `.claude-plugin/plugin.json` the Claude Code door already ships, and nothing is copied into your project. Add the marketplace once, then install the plugin:
+
+```bash
+omp plugin marketplace add miqdadbadjuber/anti-slop
+omp plugin install antislop@anti-slop
+```
+
+Or from inside an active Oh My Pi session:
+
+```text
+/marketplace add miqdadbadjuber/anti-slop
+/marketplace install antislop@anti-slop
+```
+
+The install is per user by default, which covers every project. Add `--scope project` to keep it inside the active project instead.
+
 ### Where the skills live
 
 Every skill is a folder of the open Agent Skills standard (`<name>/SKILL.md`), so it drops into any agent that reads the standard. The installer (path 1) installs into whichever of these you use, creating the folder if it is missing:
@@ -139,17 +187,23 @@ Every skill is a folder of the open Agent Skills standard (`<name>/SKILL.md`), s
 | Antigravity | `.agents/skills/` |
 | OpenCode | `.opencode/skills/` |
 | Cursor | `.cursor/skills/` |
+| Cline | `.cline/skills/` |
+| Amp | `.agents/skills/` |
 | Gemini CLI | `.gemini/skills/` |
 | Hermes | `.hermes/skills/` |
 | GitHub Copilot | `.agents/skills/` |
+| Kimi Code | `.agents/skills/` |
+| Pi | `.pi/skills/` |
 
 The Gemini CLI row is legacy support: Antigravity replaced it, but the installer still writes there for existing setups.
 
-Antigravity and Copilot share one folder. Copilot also reads `.github/skills/` and `.claude/skills/`, but the installer writes the folder they have in common, so picking both installs antislop once.
+Antigravity, Copilot, Kimi Code, and Amp share one folder. Copilot also reads `.github/skills/` and `.claude/skills/`, and Kimi Code also reads `.kimi-code/skills/`, but the installer writes the folder they have in common, so picking them together installs antislop once.
 
-Those are the project paths. A global install writes the same folder under your home directory, with three exceptions: OpenCode writes to `~/.config/opencode/skills/`, Antigravity to `~/.gemini/config/skills/`, and Codex to `~/.agents/skills/`, the user-level folder Codex documents in place of its own `~/.codex/skills/`. Copilot and OpenCode read that home-level folder too.
+Cline, Amp, and Pi each keep a folder of their own and still read one the installer writes. Cline loads `.cline/skills/`, Amp the shared `.agents/skills/`, and Pi `.pi/skills/`, and all three also load a second folder the installer writes: Cline and Amp take `.claude/skills/`, Pi takes the shared `.agents/skills/`. So installing Cline or Amp alongside Claude Code, or Pi alongside Antigravity, Copilot, Kimi Code, or Amp, puts the same names in two folders that agent reads, and the installer names that collision. Cline and Amp also resolve a collision that comes from scope in the same unusual direction, and their own documentation is the source: a global skill outranks a project one, so a stale global install silently wins over a fresh project one. Pi settles its collisions the other way round, in code rather than in documentation: project `.pi/skills/` beats the shared `.agents/skills/`, and it beats the user-level `~/.pi/agent/skills/` as well, and a duplicate name is reported with the copy it kept and the copy it dropped. The rest of the agents here do not settle it.
 
-Hermes needs one extra step after a project install: it will not load skills out of a cloned repository until you run `hermes skills trust` once in that project.
+Those are the project paths. A global install writes the same folder under your home directory, with five exceptions: OpenCode writes to `~/.config/opencode/skills/`, Antigravity to `~/.gemini/config/skills/`, Codex to `~/.agents/skills/`, the user-level folder Codex documents in place of its own `~/.codex/skills/`, Amp to `~/.config/agents/skills/`, and Pi to `~/.pi/agent/skills/`. Copilot, OpenCode, Kimi Code, and Pi read that home-level folder too, so it is where a global install reaches them.
+
+Two agents need one extra step after a project install, and they are not the same step. Hermes will not load skills out of a cloned repository until you run `hermes skills trust` once in that project, a command of its own. Pi has no such command: it asks you to trust the project on the first run, and `/trust` saves the answer for later sessions.
 
 ### Manual (single file, no packaging)
 
@@ -158,6 +212,32 @@ The core `antislop.md` alone is a complete filter you can paste into any chat wi
 ```bash
 curl -o antislop.md https://raw.githubusercontent.com/miqdadbadjuber/anti-slop/main/antislop.md
 ```
+
+## Update
+
+antislop does not update itself and nothing tells you a release is out. Every route updates by running its own command again. If you installed through the installer or the skills directory, one command replaces whatever is already there, in this project and in your home directory, and asks nothing:
+
+```bash
+npx antislop-ai --update
+```
+
+It prints the release it replaced beside the one it wrote. It cannot touch a plugin install, because a plugin keeps a copy of its own under the agent that installed it, so it names the exact command for any plugin door it finds on your machine. The Pi package is outside its reach for the same reason: the declaration lives in Pi's own settings file, not in a skills folder.
+
+| Route | Update it with |
+|-------|----------------|
+| The installer | `npx antislop-ai`, then **Overwrite them**. It prints the version on disk next to the one it carries. |
+| The skills directory | `npx skills add miqdadbadjuber/anti-slop` |
+| The plugin (Claude Code) | `claude plugin update antislop@anti-slop` |
+| The plugin (Antigravity) | `agy plugin install https://github.com/miqdadbadjuber/anti-slop` |
+| The plugin (Codex) | `codex plugin marketplace upgrade anti-slop` |
+| The plugin (Cursor) | `agent plugin marketplace update https://github.com/miqdadbadjuber/anti-slop` |
+| The plugin (Kimi Code) | `/plugins install https://github.com/miqdadbadjuber/anti-slop` |
+| The plugin (Cline) | `cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force` |
+| The package (Pi) | `pi update --extensions` |
+| The plugin (Oh My Pi) | `omp plugin marketplace update anti-slop` then `omp plugin upgrade antislop@anti-slop` |
+| Manual | download `antislop.md` again |
+
+Skills load when a session starts, so start a new one afterwards. To see which version you are on, open the `VERSION` file in the installed `antislop` folder, or ask your agent. [GUIDE.md](GUIDE.md#update) covers each route step by step.
 
 ## Skills
 
@@ -199,13 +279,25 @@ When a saved preference is active, the skill announces **"antislop active: durin
 
 ## Roadmap
 
-**v3.2.13** is the current release.
+**v3.2.18** is the current release.
+
+- **Oh My Pi is a plugin door.** It reads the marketplace catalog at `.omp-plugin/marketplace.json`, so `omp plugin marketplace add miqdadbadjuber/anti-slop` follows this repo directly, with nothing copied into your project.
+- **The door is live, not assumed.** It was verified against Oh My Pi 18.3.2 on a real install: the marketplace was added from this repository, the plugin installed, and all six skills landed in the plugin's folder. The version Oh My Pi reported came from this catalog's own `version` field.
+- **The manifest that came with the contribution is gone.** Oh My Pi resolves a plugin's manifest from `.claude-plugin/plugin.json`, a root `plugin.json`, or `package.json`, and never from `.omp-plugin/`, so that file was removed rather than kept as decoration.
+
+### Proposed v3.2.20 addition
 
 - **Usage-mode preferences are opt-in.** With no settings file, antislop asks during or after in every session as before. Save `during` or `after` to skip the question, or save `ask` to restore it.
 - **A saved mode announces itself.** The first antislop activation says which mode is active and whether it came from the global preference or a session override.
 - **Settings follow the platform.** Linux and macOS use `~/.config/antislop/settings.json`; Windows uses `%APPDATA%\antislop\settings.json`, with a `~/.config` fallback when `%APPDATA%` is unset.
 
 Every earlier release, and what comes next, is in [ROADMAP.md](ROADMAP.md).
+
+## In motion
+
+![The same brief, before and after the filter](assets/compare/antislop-compare.gif)
+
+The same four images from See the difference, in motion.
 
 ## FAQ
 
@@ -217,8 +309,9 @@ No, a filter. It does not prescribe colors, fonts, or layouts. It rejects techni
 
 All of them, but the install paths differ:
 
-- **The installer and the skills directory** support Claude Code, Codex, Antigravity, OpenCode, Cursor, Gemini CLI, Hermes, and GitHub Copilot (the installer detects each agent's skill folder). These are the recommended paths.
-- **The plugins** are per-agent doors: the Claude Code marketplace plugin (path 3), the Antigravity plugin (path 4), the Codex plugin (path 5), and the Cursor plugin (path 6), all installed from the same repo.
+- **The installer and the skills directory** support Claude Code, Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Gemini CLI, Hermes, GitHub Copilot, Kimi Code, and Pi (the installer detects each agent's skill folder). These are the recommended paths.
+- **The plugins** are per-agent doors: the Claude Code marketplace plugin (path 3), the Antigravity plugin (path 4), the Codex plugin (path 5), the Cursor plugin (path 6), the Kimi Code plugin (path 7), the Cline plugin (path 8), and the Oh My Pi plugin (path 10), all installed from the same repo.
+- **The Pi package** (path 9) is the one route that is not a plugin or a folder copy: Pi reads the `pi` key in this repository's root `package.json`.
 - **The single file** (`antislop.md`) works with any agent that reads plain Markdown, including a plain chat window.
 
 The packaged skills use the open Agent Skills standard (folder per skill), so they drop into any tool that reads the standard.

@@ -21,12 +21,15 @@ const SKILLS = fs
   .map((e) => `skills/${e.name}/SKILL.md`)
 
 const MANIFESTS = [
+  'package.json',
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
   '.codex-plugin/plugin.json',
   '.cursor-plugin/plugin.json',
   '.cursor-plugin/marketplace.json',
+  '.kimi-plugin/plugin.json',
   '.agents/plugins/marketplace.json',
+  '.omp-plugin/marketplace.json',
   'plugin.json',
   'cli/package.json',
 ]
@@ -88,7 +91,7 @@ function skillReferences() {
   return bad
 }
 
-/** The version is hand-written in eight places. They have to agree. */
+/** The version is hand-written in ten places. They have to agree. */
 function versions() {
   // A malformed file is already reported by the manifest check; do not crash here.
   const json = (p) => {
@@ -102,11 +105,16 @@ function versions() {
   if (!want) return ['cli/package.json has no readable version']
 
   const found = [
+    // The Cline plugin manifest and, from v3.2.17, the Pi package. Same release.
+    ['package.json', json('package.json')?.version],
     ['.claude-plugin/plugin.json', json('.claude-plugin/plugin.json')?.version],
     ['.claude-plugin/marketplace.json', json('.claude-plugin/marketplace.json')?.plugins?.[0]?.version],
     ['.codex-plugin/plugin.json', json('.codex-plugin/plugin.json')?.version],
     ['.cursor-plugin/plugin.json', json('.cursor-plugin/plugin.json')?.version],
-    ['cli/index.mjs', read('cli/index.mjs').match(/antislop (\d+\.\d+\.\d+)/)?.[1]],
+    ['.omp-plugin/marketplace.json', json('.omp-plugin/marketplace.json')?.plugins?.[0]?.version],
+    ['.kimi-plugin/plugin.json', json('.kimi-plugin/plugin.json')?.version],
+    // Stamped into every install, so a stale one makes the installer misreport what is on disk.
+    ['skills/antislop/VERSION', read('skills/antislop/VERSION').trim()],
     ['cli/lib/banner.mjs', read('cli/lib/banner.mjs').match(/installer v(\d+\.\d+\.\d+)/)?.[1]],
     ['skills/antislop-human/contrast-mcp.py', read('skills/antislop-human/contrast-mcp.py').match(/SERVER_VERSION = "(\d+\.\d+\.\d+)"/)?.[1]],
   ]
