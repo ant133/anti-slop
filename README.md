@@ -148,6 +148,16 @@ cline plugin install https://github.com/miqdadbadjuber/anti-slop.git
 
 The plugin ships no tools and no hooks. Its whole payload is the `skills/` folder it bundles, which Cline discovers on install. This has to be said plainly: Cline's own documentation limits plugins to the SDK, the CLI, and Kanban, and says the feature does not apply to the VS Code and JetBrains extensions yet. So this door covers a Cline CLI install and not an editor install, and the installer in path 1 is the route for an editor.
 
+### 9. The package (Pi)
+
+The same repo is a Pi package. Pi reads a `pi` key in this repository's root `package.json`, which points at the `skills/` folder, so the install is one command:
+
+```bash
+pi install git:github.com/miqdadbadjuber/anti-slop
+```
+
+That writes the package declaration to `~/.pi/agent/settings.json`, which covers every project. Add `-l` to write it to this project's `.pi/settings.json` instead, where it applies to this repository only and loads after you grant project trust.
+
 ### Where the skills live
 
 Every skill is a folder of the open Agent Skills standard (`<name>/SKILL.md`), so it drops into any agent that reads the standard. The installer (path 1) installs into whichever of these you use, creating the folder if it is missing:
@@ -165,16 +175,17 @@ Every skill is a folder of the open Agent Skills standard (`<name>/SKILL.md`), s
 | Hermes | `.hermes/skills/` |
 | GitHub Copilot | `.agents/skills/` |
 | Kimi Code | `.agents/skills/` |
+| Pi | `.pi/skills/` |
 
 The Gemini CLI row is legacy support: Antigravity replaced it, but the installer still writes there for existing setups.
 
 Antigravity, Copilot, Kimi Code, and Amp share one folder. Copilot also reads `.github/skills/` and `.claude/skills/`, and Kimi Code also reads `.kimi-code/skills/`, but the installer writes the folder they have in common, so picking them together installs antislop once.
 
-Cline and Amp both keep a folder of their own and still read one the installer writes. Cline loads `.cline/skills/` and Amp the shared `.agents/skills/`, and both also load `.claude/skills/`, so installing either alongside Claude Code puts the same names in two folders they read, and the installer names that collision. Both also resolve a collision that comes from scope in the same unusual direction, and their own documentation is the source: a global skill outranks a project one, so a stale global install silently wins over a fresh project one. The rest of the agents here do not document which copy wins.
+Cline, Amp, and Pi each keep a folder of their own and still read one the installer writes. Cline loads `.cline/skills/`, Amp the shared `.agents/skills/`, and Pi `.pi/skills/`, and all three also load a second folder the installer writes: Cline and Amp take `.claude/skills/`, Pi takes the shared `.agents/skills/`. So installing Cline or Amp alongside Claude Code, or Pi alongside Antigravity, Copilot, Kimi Code, or Amp, puts the same names in two folders that agent reads, and the installer names that collision. Cline and Amp also resolve a collision that comes from scope in the same unusual direction, and their own documentation is the source: a global skill outranks a project one, so a stale global install silently wins over a fresh project one. Pi settles its collisions the other way round, in code rather than in documentation: project `.pi/skills/` beats the shared `.agents/skills/`, and it beats the user-level `~/.pi/agent/skills/` as well, and a duplicate name is reported with the copy it kept and the copy it dropped. The rest of the agents here do not settle it.
 
-Those are the project paths. A global install writes the same folder under your home directory, with four exceptions: OpenCode writes to `~/.config/opencode/skills/`, Antigravity to `~/.gemini/config/skills/`, Codex to `~/.agents/skills/`, the user-level folder Codex documents in place of its own `~/.codex/skills/`, and Amp to `~/.config/agents/skills/`. Copilot, OpenCode, and Kimi Code read that home-level folder too, so it is where a global install reaches them.
+Those are the project paths. A global install writes the same folder under your home directory, with five exceptions: OpenCode writes to `~/.config/opencode/skills/`, Antigravity to `~/.gemini/config/skills/`, Codex to `~/.agents/skills/`, the user-level folder Codex documents in place of its own `~/.codex/skills/`, Amp to `~/.config/agents/skills/`, and Pi to `~/.pi/agent/skills/`. Copilot, OpenCode, Kimi Code, and Pi read that home-level folder too, so it is where a global install reaches them.
 
-Hermes needs one extra step after a project install: it will not load skills out of a cloned repository until you run `hermes skills trust` once in that project.
+Two agents need one extra step after a project install, and they are not the same step. Hermes will not load skills out of a cloned repository until you run `hermes skills trust` once in that project, a command of its own. Pi has no such command: it asks you to trust the project on the first run, and `/trust` saves the answer for later sessions.
 
 ### Manual (single file, no packaging)
 
@@ -192,7 +203,7 @@ antislop does not update itself and nothing tells you a release is out. Every ro
 npx antislop-ai --update
 ```
 
-It prints the release it replaced beside the one it wrote. It cannot touch a plugin install, because a plugin keeps a copy of its own under the agent that installed it, so it names the exact command for any plugin door it finds on your machine.
+It prints the release it replaced beside the one it wrote. It cannot touch a plugin install, because a plugin keeps a copy of its own under the agent that installed it, so it names the exact command for any plugin door it finds on your machine. The Pi package is outside its reach for the same reason: the declaration lives in Pi's own settings file, not in a skills folder.
 
 | Route | Update it with |
 |-------|----------------|
@@ -204,6 +215,7 @@ It prints the release it replaced beside the one it wrote. It cannot touch a plu
 | The plugin (Cursor) | `agent plugin marketplace update https://github.com/miqdadbadjuber/anti-slop` |
 | The plugin (Kimi Code) | `/plugins install https://github.com/miqdadbadjuber/anti-slop` |
 | The plugin (Cline) | `cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force` |
+| The package (Pi) | `pi update --extensions` |
 | Manual | download `antislop.md` again |
 
 Skills load when a session starts, so start a new one afterwards. To see which version you are on, open the `VERSION` file in the installed `antislop` folder, or ask your agent. [GUIDE.md](GUIDE.md#update) covers each route step by step.
@@ -238,11 +250,11 @@ antislop is used one of two ways, chosen at the start of a session:
 
 ## Roadmap
 
-**v3.2.16** is the current release.
+**v3.2.17** is the current release.
 
-- **Updating is one command.** `npx antislop-ai --update` replaces every antislop folder it finds, in this project and in your home directory, keeps the skill selection each folder was installed with, and prints the release it replaced. It asks nothing, so it also works in a script.
-- **The installer names your plugin doors.** A plugin keeps a copy of its own that `--update` cannot reach, so it used to be a silent gap. The installer now reads the four vendor stores it can (Claude Code, Antigravity, Codex, Cursor), reports the version it finds there, and prints the exact update command for each. A door that changes its layout stops being named rather than breaking the run.
-- **Your agent answers the update question in the session.** The pointer block the installer writes into `AGENTS.md` and `CLAUDE.md`, and the block in `antislop.md`, now carry the update line, and the core lists the six plugin commands instead of deferring to `GUIDE.md`. That question used to be answerable only by a maintainer reading the guide.
+- **Pi is an installer target.** `.pi/skills/` in a project, `~/.pi/agent/skills/` globally, with the `AGENTS.md` pointer. Pi also walks the shared `.agents/skills/` folder, so it keeps a folder of its own and reads one the installer already writes.
+- **Pi is a package door.** A `pi` key in this repository's root `package.json` points at `skills/`, so `pi install git:github.com/miqdadbadjuber/anti-slop` installs the same skills through Pi's own package manager.
+- **Pi's trust step is not Hermes's.** Hermes takes a command (`hermes skills trust`). Pi has none: it asks on the first run and `/trust` saves the answer. The installer says which one you have rather than telling you to run a command that does not exist.
 
 Every earlier release, and what comes next, is in [ROADMAP.md](ROADMAP.md).
 
@@ -262,8 +274,9 @@ No, a filter. It does not prescribe colors, fonts, or layouts. It rejects techni
 
 All of them, but the install paths differ:
 
-- **The installer and the skills directory** support Claude Code, Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Gemini CLI, Hermes, GitHub Copilot, and Kimi Code (the installer detects each agent's skill folder). These are the recommended paths.
+- **The installer and the skills directory** support Claude Code, Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Gemini CLI, Hermes, GitHub Copilot, Kimi Code, and Pi (the installer detects each agent's skill folder). These are the recommended paths.
 - **The plugins** are per-agent doors: the Claude Code marketplace plugin (path 3), the Antigravity plugin (path 4), the Codex plugin (path 5), the Cursor plugin (path 6), the Kimi Code plugin (path 7), and the Cline plugin (path 8), all installed from the same repo.
+- **The Pi package** (path 9) is the one route that is not a plugin or a folder copy: Pi reads the `pi` key in this repository's root `package.json`.
 - **The single file** (`antislop.md`) works with any agent that reads plain Markdown, including a plain chat window.
 
 The packaged skills use the open Agent Skills standard (folder per skill), so they drop into any tool that reads the standard.

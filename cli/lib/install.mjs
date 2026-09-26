@@ -47,6 +47,9 @@ export const AGENTS = [
   // Kimi Code reads the shared folder at both scopes. Its own .kimi-code/skills is never
   // written here, and $KIMI_CODE_HOME/skills moves with an env var the installer cannot see.
   { id: 'kimi', label: 'Kimi Code', dir: '.agents/skills', entry: 'AGENTS.md' },
+  // Pi keeps a folder of its own at both scopes and also walks the shared .agents/skills,
+  // so choosing it beside Antigravity, Copilot, Kimi, or Amp fills two folders it reads.
+  { id: 'pi', label: 'Pi', dir: '.pi/skills', globalDir: '.pi/agent/skills', readsAlso: ['.agents/skills'], entry: 'AGENTS.md' },
 ]
 
 export function skillSourceDir() {
@@ -80,8 +83,8 @@ export function resolveTargets(location, selected = AGENTS.map((a) => a.id)) {
   return [...byPath.values()]
 }
 
-// OpenCode, Hermes, Cline, and Amp read more than one project folder, so installing into
-// two of them puts the same names in both. None documents which copy wins, so name it.
+// Six rows read more than one project folder, so installing into two of them puts the
+// same names in both. Only Pi settles which copy wins, so name it either way.
 export function detectDuplicateReads({ targets, location }) {
   if (location !== 'project') return []
   const paths = new Set(targets.map((t) => t.path))

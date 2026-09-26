@@ -32,27 +32,29 @@ The core file covers all of it. Skills (see [What is a skill?](#what-is-a-skill)
 
 ## Install
 
-There are four routes in, and the difference between them matters more than it looks:
+There are five routes in, and the difference between them matters more than it looks:
 
 | Route | What it does | Works on |
 |-------|--------------|----------|
-| **The installer** | Copies the skill folders into your project or your home folder | Eleven agents, no setup beyond a terminal |
+| **The installer** | Copies the skill folders into your project or your home folder | Twelve agents, no setup beyond a terminal |
 | **The skills directory** | Copies the same folders using the skills.sh tool | The agents that directory supports |
 | **A plugin door** | Loads antislop straight from this repository, nothing copied | Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline |
+| **The Pi package** | Loads antislop through Pi's own package manager, nothing copied | Pi |
 | **The single file** | One Markdown file you hand to any AI | Anything that reads text, including a phone |
 
 Pick one. They load the same rules, so adding a second only gives you a second thing to keep updated.
 
 ### Which route should I pick?
 
-- **The installer** if you want antislop in one project or everywhere, and you use any of the eleven agents. It is the only route that covers OpenCode, Cline, Amp, Gemini CLI, Hermes, and GitHub Copilot, and the only one that detects your agents for you.
+- **The installer** if you want antislop in one project or everywhere, and you use any of the twelve agents. It is the only route that covers OpenCode, Amp, Gemini CLI, Hermes, GitHub Copilot, and Pi, and the only one that detects your agents for you.
 - **The skills directory** if you already use that directory's tool and want the folders without the installer's questions. It writes no pointer, so antislop reloads by description alone.
 - **A plugin door** if you use Claude Code, Antigravity, Codex, Cursor, Kimi Code, or Cline and would rather not keep a copy in your project. You get updates from the plugin's own update command instead of re-running an installer.
+- **The Pi package** if you use Pi and would rather have it installed and updated by Pi itself, from the same repository.
 - **The single file** if you have no terminal, or you want antislop in a chat window or on a phone.
 
 ### Before you start
 
-Three of the four routes need a terminal, the window where you type commands instead of clicking. If you do not have one, or you cannot install software on this machine, go straight to [The single file](#the-single-file).
+Four of the five routes need a terminal, the window where you type commands instead of clicking. If you do not have one, or you cannot install software on this machine, go straight to [The single file](#the-single-file).
 
 Here is how to open a terminal:
 
@@ -191,6 +193,22 @@ The plugin registers no tools and no hooks. Its whole payload is the `skills/` f
 
 ---
 
+### The Pi package
+
+Pi is the one route here that is not a plugin and not a folder copy. Pi reads a `pi` key in this repository's root `package.json`, which points at the `skills/` folder, so Pi itself fetches and installs them:
+
+```bash
+pi install git:github.com/miqdadbadjuber/anti-slop
+```
+
+That writes the package declaration to `~/.pi/agent/settings.json`, so it covers every project. Add `-l` to write it to this project's `.pi/settings.json` instead, where it covers this repository only.
+
+**Pi will ask you to trust the project.** Everything Pi loads out of a project is gated behind that decision, including the skills, and it has no command for granting it the way Hermes does. Pi asks on the first run; `/trust` saves your answer for later sessions, and `--approve` answers it once for an automated run. Context files are the exception, so `AGENTS.md` loads either way.
+
+Pi also reads the shared `.agents/skills/` folder at both scopes, so the installer (route 1) reaches it too. If you would rather not have Pi hold a package declaration of its own, that is the route to use.
+
+---
+
 ### The single file
 
 Use this when you have no terminal, or when your AI is a chat window you cannot run commands in. Three steps.
@@ -234,7 +252,7 @@ The installer, the skills directory, and the plugin doors all need a terminal, s
 
 ## Update
 
-Nothing here is automatic unless a route below says it is. Every route updates by running that route's own command again, or by replacing the copy you made. If you installed through the installer or the skills directory, you can skip straight to **One command, both file routes** below; the rest of this section is for the plugin doors and the single file. Whichever route you use, your agent loads skills when a session starts, so close the session you are in and open a new one afterwards. Until you do, the old rules are still the ones loaded.
+Nothing here is automatic unless a route below says it is. Every route updates by running that route's own command again, or by replacing the copy you made. If you installed through the installer or the skills directory, you can skip straight to **One command, both file routes** below; the rest of this section is for the plugin doors, the Pi package, and the single file. Whichever route you use, your agent loads skills when a session starts, so close the session you are in and open a new one afterwards. Until you do, the old rules are still the ones loaded.
 
 **First, how do you know a new version is out?** Nothing notifies you. Two places always carry the current one: the [releases page](https://github.com/miqdadbadjuber/anti-slop/releases) and the version badge at the top of the [README](README.md).
 
@@ -250,7 +268,7 @@ npx antislop-ai --update
 
 It looks in the current project and in your home directory, replaces every antislop folder it finds, keeps the skill selection each folder was installed with, and prints the release it replaced next to the one it wrote. It asks nothing, so it is also the one to use in a script.
 
-It cannot reach a plugin install. A plugin keeps its own copy under the agent that installed it, which is why the same command also reads the plugin stores it can find and prints the update command for each door it sees. The plugin doors section below covers them one by one, and the two routes it does cover are the two below.
+It cannot reach a plugin install or the Pi package. A plugin keeps its own copy under the agent that installed it, and Pi keeps a package declaration in its own settings file, which is why the same command also reads the plugin stores it can find and prints the update command for each door it sees. The plugin doors and the Pi package sections below cover them one by one, and the two routes it does cover are the two below.
 
 ### The installer
 
@@ -351,6 +369,16 @@ cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force
 
 Without it, Cline keeps what is installed and tells you so.
 
+### The Pi package
+
+Let Pi reconcile what it has installed, which covers antislop and anything else you added:
+
+```bash
+pi update --extensions
+```
+
+Running the install command again works as well. Nothing is copied into your project by this route, so there is no folder to replace and no pointer to refresh. If you installed with `-l`, the declaration is in this project's `.pi/settings.json` and loads after project trust is granted.
+
 ### The single file
 
 Download the file again and replace your copy. There is nothing else to update, since this route installs no folders.
@@ -414,6 +442,14 @@ It asks for confirmation. `/plugins disable antislop` switches it off without re
 
 Cline documents no plugin uninstall command, only `cline plugin install`, so delete the plugin's folder under `~/.cline/plugins/_installed/` instead. Nothing was copied into your project, so that is the whole removal.
 
+### The Pi package
+
+```bash
+pi remove git:github.com/miqdadbadjuber/anti-slop
+```
+
+That deletes the entry from Pi's `packages` list, in `~/.pi/agent/settings.json` or in this project's `.pi/settings.json` if you installed with `-l`. `pi list` shows what Pi still has configured. Nothing was copied into your project by this route, so that is the whole removal.
+
 ### The single file
 
 Delete the `antislop.md` file you downloaded. If you attached it to a chat project instead of keeping it as a file, remove it from that project's reference material.
@@ -439,14 +475,15 @@ The installer writes into the folder your agent reads. This is what it writes an
 | Hermes | `.hermes/skills/` |
 | GitHub Copilot | `.agents/skills/` |
 | Kimi Code | `.agents/skills/` |
+| Pi | `.pi/skills/` |
 
-A global install writes the same folder under your home directory, with four exceptions. OpenCode documents its global skills folder as `~/.config/opencode/skills/`, so the installer writes there rather than to `~/.opencode/skills/`, which OpenCode still reads but does not document. Antigravity reads a project's `.agents/skills/`, but under your home directory it reads `~/.gemini/config/skills/` and not `~/.agents/skills/`, so the installer writes there on a global install. Codex goes the other way: it marks its own `~/.codex/skills/` as the deprecated user location and documents `~/.agents/skills/` in its place, so a global Codex install writes the shared folder. Amp is the fourth. It documents `~/.config/agents/skills/` as its user-level folder, so a global install writes there and not to `~/.agents/skills/`, which Amp still reads at a lower rank. Copilot and Kimi Code read that same home-level folder, so a global install reaches them through the folder name a project install uses.
+A global install writes the same folder under your home directory, with five exceptions. OpenCode documents its global skills folder as `~/.config/opencode/skills/`, so the installer writes there rather than to `~/.opencode/skills/`, which OpenCode still reads but does not document. Antigravity reads a project's `.agents/skills/`, but under your home directory it reads `~/.gemini/config/skills/` and not `~/.agents/skills/`, so the installer writes there on a global install. Codex goes the other way: it marks its own `~/.codex/skills/` as the deprecated user location and documents `~/.agents/skills/` in its place, so a global Codex install writes the shared folder. Amp is the fourth. It documents `~/.config/agents/skills/` as its user-level folder, so a global install writes there and not to `~/.agents/skills/`, which Amp still reads at a lower rank. Pi is the fifth: a project install writes `.pi/skills/`, and `~/.pi/agent/skills/` at user level, which is not the shared folder either. Copilot, Kimi Code, and Pi read that home-level folder too, so a global install reaches them through the folder name a project install uses.
 
-Antigravity, Copilot, Kimi Code, and Amp share `.agents/skills/`. Copilot also reads `.github/skills/` and `.claude/skills/`, and Kimi Code also reads `.kimi-code/skills/`, but there is no reason to write a second copy, so picking them together installs once. Cline is the exception to the pattern: its own folder is `.cline/skills/`, and it reads `.claude/skills/` beside it, so there is a real second copy to worry about and the note below covers it. Amp sits in both groups, because it shares the folder above and also reads `.claude/skills/`, and the same note covers it.
+Antigravity, Copilot, Kimi Code, and Amp share `.agents/skills/`. Copilot also reads `.github/skills/` and `.claude/skills/`, and Kimi Code also reads `.kimi-code/skills/`, but there is no reason to write a second copy, so picking them together installs once. Cline is the exception to the pattern: its own folder is `.cline/skills/`, and it reads `.claude/skills/` beside it, so there is a real second copy to worry about and the note below covers it. Amp and Pi sit in both groups, because each shares the folder above and also reads a second one, and the same note covers them.
 
-**Five of these agents read more than one folder, and that is a problem.** OpenCode loads skills from `.opencode/skills/`, `.claude/skills/`, and `.agents/skills/`, and its documentation asks that skill names be unique across every location while never saying which copy wins if they are not. Codex walks `.agents/skills/` up from the working directory, Hermes reads both `.hermes/skills/` and `.agents/skills/`, and Cline and Amp each load `.claude/skills/` beside their own folder. So a collision takes two selections: OpenCode, Cline, or Amp beside Claude Code, or Codex, OpenCode, or Hermes beside any of Antigravity, Copilot, Kimi Code, or Amp, and the same skill names land in two folders that agent reads. The installer names that when it happens, and the fix is to remove the copy you do not need, usually the `.opencode/skills/` one, since OpenCode reads the other folder by its own documentation. Two of the five also resolve a collision that comes from scope rather than from two folders, and they resolve it the unusual way round: Cline and Amp both let a global skill outrank a project skill of the same name, so a stale global install silently wins over a fresh project one. Their own documentation is the source for that, and the other agents here do not settle it.
+**Six of these agents read more than one folder, and that is a problem.** OpenCode loads skills from `.opencode/skills/`, `.claude/skills/`, and `.agents/skills/`, and its documentation asks that skill names be unique across every location while never saying which copy wins if they are not. Codex walks `.agents/skills/` up from the working directory, Hermes reads both `.hermes/skills/` and `.agents/skills/`, Cline and Amp each load `.claude/skills/` beside their own folder, and Pi loads `.agents/skills/` beside its own. So a collision takes two selections: OpenCode, Cline, or Amp beside Claude Code, or Codex, Hermes, or Pi beside any of Antigravity, Copilot, Kimi Code, or Amp, or OpenCode beside any of those, and the same skill names land in two folders that agent reads. The installer names that when it happens, and the fix is to remove the copy you do not need, usually the `.opencode/skills/` one, since OpenCode reads the other folder by its own documentation. Two of the six also resolve a collision that comes from scope rather than from two folders, and they resolve it the unusual way round: Cline and Amp both let a global skill outrank a project skill of the same name, so a stale global install silently wins over a fresh project one. Their own documentation is the source for that. Pi settles a collision of its own, in the opposite direction: project `.pi/skills/` outranks both the shared `.agents/skills/` and the user-level `~/.pi/agent/skills/`, which its own loader was read for. The other agents here do not settle it.
 
-On a project install the installer also writes the pointer that reloads antislop every session: into the project's `AGENTS.md` for Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Hermes, Copilot, and Kimi Code, into `CLAUDE.md` for Claude Code, and into `GEMINI.md` for Gemini CLI. For OpenCode that is the whole mechanism: it loads the skill folders from `.opencode/skills/` and reads the pointer from `AGENTS.md`, which was verified against the opencode CLI.
+On a project install the installer also writes the pointer that reloads antislop every session: into the project's `AGENTS.md` for Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Hermes, Copilot, Kimi Code, and Pi, into `CLAUDE.md` for Claude Code, and into `GEMINI.md` for Gemini CLI. For OpenCode that is the whole mechanism: it loads the skill folders from `.opencode/skills/` and reads the pointer from `AGENTS.md`, which was verified against the opencode CLI.
 
 **Claude Code reads `AGENTS.md` too, since v2.1.277.** antislop still writes `CLAUDE.md` for it, because the two are not equal: Claude reads `AGENTS.md` only when no `CLAUDE.md` or `CLAUDE.local.md` exists in the working directory or any directory above it. In a project that has one, an `AGENTS.md`-only pointer would be ignored without an error. The setting under **Project instructions** in `/config` can change that, and `AGENTS.md` is not read at all on Bedrock, Vertex, or Foundry.
 
@@ -459,6 +496,8 @@ hermes skills trust
 It prints the folder it trusted and how many skills will now load. Hermes tells you this itself, with a banner naming the command, so a forgotten step is loud rather than silent. Run `hermes skills untrust` to take it back.
 
 One caveat on versions: project skills are a newer Hermes feature. The official installer tracks the newest code and has it. The `hermes-agent` package on PyPI is older and does not, so if `hermes skills trust` is not a command your Hermes knows, either update Hermes or install antislop globally instead.
+
+**Pi needs one more step, and it is not the same one.** Pi gates everything it loads out of a project, including `.pi/skills/` and the shared `.agents/skills/`, behind a trust decision. Unlike Hermes, Pi has no command for granting it: Pi asks on the first run and remembers the answer once you give it, `/trust` saves that answer for later sessions, and `--approve` answers it once for a single automated run. The setting `defaultProjectTrust` decides what happens when Pi cannot ask, in print, JSON, or RPC mode. Context files are not gated, so the `AGENTS.md` pointer loads either way. That is the part worth knowing: the skills stay dark until you answer, while the pointer is already there telling you antislop is installed.
 
 Gemini CLI is legacy support. Consumer access ended on 18 June 2026 and Antigravity replaced it, but it was not a total shutdown: enterprise Code Assist licences and paid API keys still work, and the repository is still maintained. The installer still writes into `.gemini/skills/` for existing Gemini CLI setups.
 
@@ -486,7 +525,7 @@ If your `DESIGN.md` happens to ask for something antislop counts as slop, it doe
 
 ## Where is this going?
 
-antislop is packaged three ways at once: standard skill folders, native plugins for Claude Code, Antigravity, Codex, Cursor, Kimi Code, and Cline, and the single-file core that works anywhere. Agent support grows over time. For the current release and what comes next, see the [roadmap](ROADMAP.md). For the full picture of every skill, see the [README](README.md).
+antislop is packaged four ways at once: standard skill folders, native plugins for Claude Code, Antigravity, Codex, Cursor, Kimi Code, and Cline, a Pi package read from the root `package.json`, and the single-file core that works anywhere. Agent support grows over time. For the current release and what comes next, see the [roadmap](ROADMAP.md). For the full picture of every skill, see the [README](README.md).
 
 ## Feedback
 

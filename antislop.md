@@ -69,6 +69,7 @@ antislop never updates itself, and nothing announces a new release. Answer from 
   - **Cursor**: `agent plugin marketplace update https://github.com/miqdadbadjuber/anti-slop`
   - **Kimi Code**: `/plugins install https://github.com/miqdadbadjuber/anti-slop`
   - **Cline**: `cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force`
+- **The Pi package** (`pi install git:github.com/miqdadbadjuber/anti-slop`): run `pi update --extensions`. The declaration lives in Pi's settings file rather than in a folder, so `--update` cannot see it.
 - **This file alone**: download it again and replace the copy.
 
 The folder this skill sits in holds a `VERSION` file naming the release it came from, unless it was installed before that file shipped. The current release is on the repo's releases page.

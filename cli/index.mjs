@@ -185,6 +185,12 @@ async function main() {
     log.warn('Hermes needs one more step: run `hermes skills trust` in this project.')
   }
 
+  // Pi gates its project folders too, but has no command for it: it asks on the first
+  // run and `/trust` saves the answer, so a command here would be the wrong instruction.
+  if (location === 'project' && targets.some((t) => t.agents.some((a) => a.id === 'pi'))) {
+    log.warn('Pi will ask you to trust this project before it loads the skills. `/trust` saves that answer.')
+  }
+
   // Two folders holding the same skill names is how a skill goes missing in OpenCode,
   // which reads both and does not document which copy it keeps.
   for (const dup of detectDuplicateReads({ targets, location })) {
