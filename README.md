@@ -158,6 +158,24 @@ pi install git:github.com/miqdadbadjuber/anti-slop
 
 That writes the package declaration to `~/.pi/agent/settings.json`, which covers every project. Add `-l` to write it to this project's `.pi/settings.json` instead, where it applies to this repository only and loads after you grant project trust.
 
+### 10. The plugin (Oh My Pi)
+
+The same repo is an Oh My Pi plugin and marketplace. Add the marketplace once, then install the plugin:
+
+```bash
+omp plugin marketplace add miqdadbadjuber/anti-slop
+omp plugin install antislop@anti-slop
+```
+
+Or from inside an active Oh My Pi session:
+
+```text
+/marketplace add miqdadbadjuber/anti-slop
+/marketplace install antislop@anti-slop
+```
+
+The install is per user by default, which covers every project. Add `--scope project` to keep it inside the active project instead.
+
 ### Where the skills live
 
 Every skill is a folder of the open Agent Skills standard (`<name>/SKILL.md`), so it drops into any agent that reads the standard. The installer (path 1) installs into whichever of these you use, creating the folder if it is missing:
@@ -216,6 +234,7 @@ It prints the release it replaced beside the one it wrote. It cannot touch a plu
 | The plugin (Kimi Code) | `/plugins install https://github.com/miqdadbadjuber/anti-slop` |
 | The plugin (Cline) | `cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force` |
 | The package (Pi) | `pi update --extensions` |
+| The plugin (Oh My Pi) | `omp plugin marketplace update anti-slop` |
 | Manual | download `antislop.md` again |
 
 Skills load when a session starts, so start a new one afterwards. To see which version you are on, open the `VERSION` file in the installed `antislop` folder, or ask your agent. [GUIDE.md](GUIDE.md#update) covers each route step by step.
@@ -275,7 +294,7 @@ No, a filter. It does not prescribe colors, fonts, or layouts. It rejects techni
 All of them, but the install paths differ:
 
 - **The installer and the skills directory** support Claude Code, Codex, Antigravity, OpenCode, Cursor, Cline, Amp, Gemini CLI, Hermes, GitHub Copilot, Kimi Code, and Pi (the installer detects each agent's skill folder). These are the recommended paths.
-- **The plugins** are per-agent doors: the Claude Code marketplace plugin (path 3), the Antigravity plugin (path 4), the Codex plugin (path 5), the Cursor plugin (path 6), the Kimi Code plugin (path 7), and the Cline plugin (path 8), all installed from the same repo.
+- **The plugins** are per-agent doors: the Claude Code marketplace plugin (path 3), the Antigravity plugin (path 4), the Codex plugin (path 5), the Cursor plugin (path 6), the Kimi Code plugin (path 7), the Cline plugin (path 8), and the Oh My Pi plugin (path 10), all installed from the same repo.
 - **The Pi package** (path 9) is the one route that is not a plugin or a folder copy: Pi reads the `pi` key in this repository's root `package.json`.
 - **The single file** (`antislop.md`) works with any agent that reads plain Markdown, including a plain chat window.
 

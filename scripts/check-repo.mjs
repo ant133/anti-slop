@@ -29,6 +29,8 @@ const MANIFESTS = [
   '.cursor-plugin/marketplace.json',
   '.kimi-plugin/plugin.json',
   '.agents/plugins/marketplace.json',
+  '.omp-plugin/plugin.json',
+  '.omp-plugin/marketplace.json',
   'plugin.json',
   'cli/package.json',
 ]
@@ -90,7 +92,7 @@ function skillReferences() {
   return bad
 }
 
-/** The version is hand-written in nine places. They have to agree. */
+/** The version is hand-written in eleven places. They have to agree. */
 function versions() {
   // A malformed file is already reported by the manifest check; do not crash here.
   const json = (p) => {
@@ -110,6 +112,8 @@ function versions() {
     ['.claude-plugin/marketplace.json', json('.claude-plugin/marketplace.json')?.plugins?.[0]?.version],
     ['.codex-plugin/plugin.json', json('.codex-plugin/plugin.json')?.version],
     ['.cursor-plugin/plugin.json', json('.cursor-plugin/plugin.json')?.version],
+    ['.omp-plugin/plugin.json', json('.omp-plugin/plugin.json')?.version],
+    ['.omp-plugin/marketplace.json', json('.omp-plugin/marketplace.json')?.plugins?.[0]?.version],
     ['.kimi-plugin/plugin.json', json('.kimi-plugin/plugin.json')?.version],
     // Stamped into every install, so a stale one makes the installer misreport what is on disk.
     ['skills/antislop/VERSION', read('skills/antislop/VERSION').trim()],

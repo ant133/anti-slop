@@ -38,7 +38,7 @@ There are five routes in, and the difference between them matters more than it l
 |-------|--------------|----------|
 | **The installer** | Copies the skill folders into your project or your home folder | Twelve agents, no setup beyond a terminal |
 | **The skills directory** | Copies the same folders using the skills.sh tool | The agents that directory supports |
-| **A plugin door** | Loads antislop straight from this repository, nothing copied | Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline |
+| **A plugin door** | Loads antislop straight from this repository, nothing copied | Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, Oh My Pi |
 | **The Pi package** | Loads antislop through Pi's own package manager, nothing copied | Pi |
 | **The single file** | One Markdown file you hand to any AI | Anything that reads text, including a phone |
 
@@ -48,7 +48,7 @@ Pick one. They load the same rules, so adding a second only gives you a second t
 
 - **The installer** if you want antislop in one project or everywhere, and you use any of the twelve agents. It is the only route that covers OpenCode, Amp, Gemini CLI, Hermes, GitHub Copilot, and Pi, and the only one that detects your agents for you.
 - **The skills directory** if you already use that directory's tool and want the folders without the installer's questions. It writes no pointer, so antislop reloads by description alone.
-- **A plugin door** if you use Claude Code, Antigravity, Codex, Cursor, Kimi Code, or Cline and would rather not keep a copy in your project. You get updates from the plugin's own update command instead of re-running an installer.
+- **A plugin door** if you use Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, or Oh My Pi and would rather not keep a copy in your project. You get updates from the plugin's own update command instead of re-running an installer.
 - **The Pi package** if you use Pi and would rather have it installed and updated by Pi itself, from the same repository.
 - **The single file** if you have no terminal, or you want antislop in a chat window or on a phone.
 
@@ -133,7 +133,7 @@ What it does not do is write the pointer that reloads antislop every session. If
 
 A plugin is a feature of the agent, not of antislop. You point the agent at this repository once, and from then on the agent loads antislop directly from there. Nothing is copied into your project, so there is no snapshot that can quietly go stale. A new version arrives by updating the plugin, not by re-running an installer.
 
-Two things to know before you pick one. A plugin fits exactly one agent, so this route exists for five agents and not for the other four. And every agent below keeps its own local copy, so none of them updates by itself unless that agent says it does.
+Two things to know before you pick one. A plugin fits exactly one agent, so use the door for your agent from the list below. And every agent below keeps its own local copy, so none of them updates by itself unless that agent says it does.
 
 #### Claude Code
 
@@ -190,6 +190,22 @@ cline plugin install https://github.com/miqdadbadjuber/anti-slop.git
 The plugin registers no tools and no hooks. Its whole payload is the `skills/` folder it bundles, which Cline discovers when the plugin is installed, so there is no pointer to write and nothing is copied into your project.
 
 **Read this before you pick it.** Cline's own documentation limits plugins to the SDK, the CLI, and Kanban, and states that the feature does not apply to the VS Code and JetBrains extensions. So this door is for a Cline CLI install. If you run Cline inside an editor, use the installer instead: it writes the same skills into `.cline/skills/`, which both the CLI and the extensions read.
+
+#### Oh My Pi
+
+Add the marketplace once, then install the plugin:
+
+```bash
+omp plugin marketplace add miqdadbadjuber/anti-slop
+omp plugin install antislop@anti-slop
+```
+
+Or from inside an active Oh My Pi session:
+
+```text
+/marketplace add miqdadbadjuber/anti-slop
+/marketplace install antislop@anti-slop
+```
 
 ---
 
@@ -369,6 +385,15 @@ cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force
 
 Without it, Cline keeps what is installed and tells you so.
 
+#### Oh My Pi
+
+Update the marketplace catalog and upgrade the plugin:
+
+```bash
+omp plugin marketplace update anti-slop
+omp plugin upgrade antislop@anti-slop
+```
+
 ### The Pi package
 
 Let Pi reconcile what it has installed, which covers antislop and anything else you added:
@@ -441,6 +466,18 @@ It asks for confirmation. `/plugins disable antislop` switches it off without re
 #### Cline
 
 Cline documents no plugin uninstall command, only `cline plugin install`, so delete the plugin's folder under `~/.cline/plugins/_installed/` instead. Nothing was copied into your project, so that is the whole removal.
+
+#### Oh My Pi
+
+```bash
+omp plugin uninstall antislop@anti-slop
+```
+
+To drop the marketplace as well:
+
+```bash
+omp plugin marketplace remove anti-slop
+```
 
 ### The Pi package
 
@@ -525,7 +562,7 @@ If your `DESIGN.md` happens to ask for something antislop counts as slop, it doe
 
 ## Where is this going?
 
-antislop is packaged four ways at once: standard skill folders, native plugins for Claude Code, Antigravity, Codex, Cursor, Kimi Code, and Cline, a Pi package read from the root `package.json`, and the single-file core that works anywhere. Agent support grows over time. For the current release and what comes next, see the [roadmap](ROADMAP.md). For the full picture of every skill, see the [README](README.md).
+antislop is packaged four ways at once: standard skill folders, native plugins for Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, and Oh My Pi, a Pi package read from the root `package.json`, and the single-file core that works anywhere. Agent support grows over time. For the current release and what comes next, see the [roadmap](ROADMAP.md). For the full picture of every skill, see the [README](README.md).
 
 ## Feedback
 
