@@ -46,7 +46,7 @@ Pick one. They load the same rules, so adding a second only gives you a second t
 
 ### Which route should I pick?
 
-- **The installer** if you want antislop in one project or everywhere, and you use any of the twelve agents. It is the only route that covers OpenCode, Amp, Gemini CLI, Hermes, GitHub Copilot, and Pi, and the only one that detects your agents for you.
+- **The installer** if you want antislop in one project or everywhere, and you use any of the twelve agents. It is the only route that covers OpenCode, Amp, Gemini CLI, Hermes, and GitHub Copilot, and the only one that detects your agents for you.
 - **The skills directory** if you already use that directory's tool and want the folders without the installer's questions. It writes no pointer, so antislop reloads by description alone.
 - **A plugin door** if you use Claude Code, Antigravity, Codex, Cursor, Kimi Code, Cline, or Oh My Pi and would rather not keep a copy in your project. You get updates from the plugin's own update command instead of re-running an installer.
 - **The Pi package** if you use Pi and would rather have it installed and updated by Pi itself, from the same repository.
@@ -193,7 +193,7 @@ The plugin registers no tools and no hooks. Its whole payload is the `skills/` f
 
 #### Oh My Pi
 
-Add the marketplace once, then install the plugin:
+Oh My Pi reads the catalog this repository keeps at `.omp-plugin/marketplace.json`, and it resolves the plugin's manifest from there: `.claude-plugin/plugin.json`, the same file the Claude Code door uses, is what points at the `skills/` folder. So nothing is copied into your project and there is no pointer to write. Add the marketplace once, then install the plugin:
 
 ```bash
 omp plugin marketplace add miqdadbadjuber/anti-slop
@@ -514,7 +514,7 @@ The installer writes into the folder your agent reads. This is what it writes an
 | Kimi Code | `.agents/skills/` |
 | Pi | `.pi/skills/` |
 
-A global install writes the same folder under your home directory, with five exceptions. OpenCode documents its global skills folder as `~/.config/opencode/skills/`, so the installer writes there rather than to `~/.opencode/skills/`, which OpenCode still reads but does not document. Antigravity reads a project's `.agents/skills/`, but under your home directory it reads `~/.gemini/config/skills/` and not `~/.agents/skills/`, so the installer writes there on a global install. Codex goes the other way: it marks its own `~/.codex/skills/` as the deprecated user location and documents `~/.agents/skills/` in its place, so a global Codex install writes the shared folder. Amp is the fourth. It documents `~/.config/agents/skills/` as its user-level folder, so a global install writes there and not to `~/.agents/skills/`, which Amp still reads at a lower rank. Pi is the fifth: a project install writes `.pi/skills/`, and `~/.pi/agent/skills/` at user level, which is not the shared folder either. Copilot, Kimi Code, and Pi read that home-level folder too, so a global install reaches them through the folder name a project install uses.
+A global install writes the same folder under your home directory, with five exceptions. OpenCode documents its global skills folder as `~/.config/opencode/skills/`, so the installer writes there rather than to `~/.opencode/skills/`, which OpenCode still reads but does not document. Antigravity reads a project's `.agents/skills/`, but under your home directory it reads `~/.gemini/config/skills/` and not `~/.agents/skills/`, so the installer writes there on a global install. Codex goes the other way: it marks its own `~/.codex/skills/` as the deprecated user location and documents `~/.agents/skills/` in its place, so a global Codex install writes the shared folder. Amp is the fourth. It documents `~/.config/agents/skills/` as its user-level folder, so a global install writes there and not to `~/.agents/skills/`, which Amp still reads at a lower rank. Pi is the fifth: a project install writes `.pi/skills/`, and `~/.pi/agent/skills/` at user level, which is not the shared folder either. Copilot, OpenCode, Kimi Code, and Pi read that home-level folder too, so a global install reaches them through the folder name a project install uses.
 
 Antigravity, Copilot, Kimi Code, and Amp share `.agents/skills/`. Copilot also reads `.github/skills/` and `.claude/skills/`, and Kimi Code also reads `.kimi-code/skills/`, but there is no reason to write a second copy, so picking them together installs once. Cline is the exception to the pattern: its own folder is `.cline/skills/`, and it reads `.claude/skills/` beside it, so there is a real second copy to worry about and the note below covers it. Amp and Pi sit in both groups, because each shares the folder above and also reads a second one, and the same note covers them.
 

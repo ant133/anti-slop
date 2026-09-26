@@ -160,7 +160,7 @@ That writes the package declaration to `~/.pi/agent/settings.json`, which covers
 
 ### 10. The plugin (Oh My Pi)
 
-The same repo is an Oh My Pi plugin and marketplace. Add the marketplace once, then install the plugin:
+The same repo is an Oh My Pi plugin and marketplace. Oh My Pi reads the catalog this repository keeps at `.omp-plugin/marketplace.json`, so the only Oh My Pi file here is that catalog: the plugin's manifest is the `.claude-plugin/plugin.json` the Claude Code door already ships, and nothing is copied into your project. Add the marketplace once, then install the plugin:
 
 ```bash
 omp plugin marketplace add miqdadbadjuber/anti-slop
@@ -234,7 +234,7 @@ It prints the release it replaced beside the one it wrote. It cannot touch a plu
 | The plugin (Kimi Code) | `/plugins install https://github.com/miqdadbadjuber/anti-slop` |
 | The plugin (Cline) | `cline plugin install https://github.com/miqdadbadjuber/anti-slop.git --force` |
 | The package (Pi) | `pi update --extensions` |
-| The plugin (Oh My Pi) | `omp plugin marketplace update anti-slop` |
+| The plugin (Oh My Pi) | `omp plugin marketplace update anti-slop` then `omp plugin upgrade antislop@anti-slop` |
 | Manual | download `antislop.md` again |
 
 Skills load when a session starts, so start a new one afterwards. To see which version you are on, open the `VERSION` file in the installed `antislop` folder, or ask your agent. [GUIDE.md](GUIDE.md#update) covers each route step by step.
@@ -269,11 +269,11 @@ antislop is used one of two ways, chosen at the start of a session:
 
 ## Roadmap
 
-**v3.2.17** is the current release.
+**v3.2.18** is the current release.
 
-- **Pi is an installer target.** `.pi/skills/` in a project, `~/.pi/agent/skills/` globally, with the `AGENTS.md` pointer. Pi also walks the shared `.agents/skills/` folder, so it keeps a folder of its own and reads one the installer already writes.
-- **Pi is a package door.** A `pi` key in this repository's root `package.json` points at `skills/`, so `pi install git:github.com/miqdadbadjuber/anti-slop` installs the same skills through Pi's own package manager.
-- **Pi's trust step is not Hermes's.** Hermes takes a command (`hermes skills trust`). Pi has none: it asks on the first run and `/trust` saves the answer. The installer says which one you have rather than telling you to run a command that does not exist.
+- **Oh My Pi is a plugin door.** It reads the marketplace catalog at `.omp-plugin/marketplace.json`, so `omp plugin marketplace add miqdadbadjuber/anti-slop` follows this repo directly, with nothing copied into your project.
+- **The door is live, not assumed.** It was verified against Oh My Pi 18.3.2 on a real install: the marketplace was added from this repository, the plugin installed, and all six skills landed in the plugin's folder. The version Oh My Pi reported came from this catalog's own `version` field.
+- **The manifest that came with the contribution is gone.** Oh My Pi resolves a plugin's manifest from `.claude-plugin/plugin.json`, a root `plugin.json`, or `package.json`, and never from `.omp-plugin/`, so that file was removed rather than kept as decoration.
 
 Every earlier release, and what comes next, is in [ROADMAP.md](ROADMAP.md).
 

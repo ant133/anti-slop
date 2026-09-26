@@ -193,7 +193,7 @@ export function detectConflicts({ skills, targets }) {
   for (const t of targets) {
     for (const skill of skills) {
       if (fs.existsSync(path.join(t.path, skill))) {
-        conflicts.push({ skill, agent: t.agent, path: path.join(t.path, skill) })
+        conflicts.push({ skill, agents: t.agents.map((a) => a.id), path: path.join(t.path, skill) })
       }
     }
   }

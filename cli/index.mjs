@@ -168,9 +168,9 @@ async function main() {
     log.step('Pointer written to ' + pointers.map((p) => path.basename(p)).join(', '))
   }
 
-  const agentCount = new Set(written.flatMap((w) => w.agents)).size
+  const folderCount = new Set(written.map((w) => path.dirname(w.path))).size
   if (written.length > 0) {
-    outro(`Installed ${written.length} skill(s) into ${agentCount} agent folder(s).`)
+    outro(`Installed ${written.length} skill(s) into ${folderCount} agent folder(s).`)
     console.log(pc.dim('antislop is ready. The next agent session loads it.'))
   } else {
     // "Existing folders were kept" used to read as success. The copies are the
